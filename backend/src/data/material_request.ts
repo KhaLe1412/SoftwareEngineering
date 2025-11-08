@@ -1,4 +1,4 @@
-import { MaterialAccessRequest } from "../../types/type";
+import { MaterialAccessRequest } from "../types/type";
 
 export const mockMaterialAccessRequests: MaterialAccessRequest[] = [
   {

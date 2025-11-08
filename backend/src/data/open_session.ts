@@ -1,4 +1,4 @@
-import { Session } from "../../types/type";
+import { Session } from "../types/type";
 
 export const mockOpenSessions: Session[] = [
   {

@@ -1,4 +1,4 @@
-import { Admin } from "../../types/type";
+import { Admin } from "../types/type";
 
 // Demo Admin Account
 export const mockAdmins: Admin[] = [

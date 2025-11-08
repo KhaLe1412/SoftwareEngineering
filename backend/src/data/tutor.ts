@@ -1,4 +1,4 @@
-import { Tutor } from "../../types/type";
+import { Tutor } from "../types/type";
 
 // Dữ liệu hardcode cho các gia sư
 export const mockTutors: Tutor[] = [

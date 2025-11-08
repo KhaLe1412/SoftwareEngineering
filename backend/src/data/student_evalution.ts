@@ -1,4 +1,4 @@
-import { StudentEvaluation } from "../../types/type";
+import { StudentEvaluation } from "../types/type";
 
 export const mockStudentEvaluations: StudentEvaluation[] = [
   {

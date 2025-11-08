@@ -1,4 +1,4 @@
-import { UserRole } from "../types/type";
+import { UserRole } from "../types/type.js";
 
 export const demoAccounts = [
   // Students

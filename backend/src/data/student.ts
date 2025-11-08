@@ -1,4 +1,4 @@
-import { Student } from "../types/type";
+import { Student } from "../types/type.js";
 
 // Dữ liệu Mock cho Student
 export const mockStudents: Student[] = [

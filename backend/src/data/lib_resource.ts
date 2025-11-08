@@ -1,4 +1,4 @@
-import { LibraryResource } from "../types/type";
+import { LibraryResource } from "../types/type.js";
 
 export const mockLibraryResources: LibraryResource[] = [
   {

@@ -1,4 +1,4 @@
-import { MatchRequest } from "../types/type";
+import { MatchRequest } from "../types/type.js";
 
 export const mockMatchRequests: MatchRequest[] = [
   {

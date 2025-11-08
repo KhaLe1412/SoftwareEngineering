@@ -1,4 +1,4 @@
-import { Session } from "../types/type";
+import { Session } from "../types/type.js";
 
 // Dữ liệu Mock cho Session
 export const mockSessions: Session[] = [

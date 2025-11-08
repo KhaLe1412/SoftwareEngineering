@@ -1,4 +1,4 @@
-import { SessionRequest } from "../types/type";
+import { SessionRequest } from "../types/type.js";
 
 export const mockSessionRequests: SessionRequest[] = [
   {

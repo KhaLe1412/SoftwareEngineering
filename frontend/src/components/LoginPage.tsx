@@ -35,20 +35,56 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   const [error, setError] = useState('');
   const [showDemoAccounts, setShowDemoAccounts] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // const handleSubmit = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setError('');
+
+  //   const account = demoAccounts.find(
+  //     acc => acc.username === username && acc.password === password
+  //   );
+
+  //   if (account) {
+  //     onLogin(account.role, account.userId);
+  //   } else {
+  //     setError('Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.');
+  //   }
+  // };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    const account = demoAccounts.find(
-      acc => acc.username === username && acc.password === password
-    );
+    // 1. Dùng try...catch để xử lý lỗi mạng/server
+    try {
+      // 2. Gửi yêu cầu POST đến backend
+      const response = await fetch('http://localhost:5000/api/auth/login', { // <-- URL API đăng nhập
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // 3. Gửi username và password trong body
+        body: JSON.stringify({ username, password }),
+      });
 
-    if (account) {
+      // 4. Kiểm tra xem server có trả về lỗi không (ví dụ: 401 - Sai mật khẩu)
+      if (!response.ok) {
+        // Nếu đăng nhập thất bại, server sẽ trả về response.ok = false
+        setError('Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.');
+        return;
+      }
+
+      // 5. Nếu thành công, lấy dữ liệu (ví dụ: role, userId) từ server
+      const account = await response.json(); 
+
+      // 6. Gọi hàm onLogin với dữ liệu từ server
       onLogin(account.role, account.userId);
-    } else {
-      setError('Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.');
+
+    } catch (error) {
+      // 7. Bắt lỗi nếu server bị sập hoặc mất kết nối
+      console.error('Login error:', error);
+      setError('Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
     }
-  };
+  };  
 
   const handleQuickLogin = (account: typeof demoAccounts[0]) => {
     setUsername(account.username);

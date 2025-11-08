@@ -1,4 +1,4 @@
-import { RescheduleRequest } from "../types/type";
+import { RescheduleRequest } from "../types/type.js";
 
 export const mockRescheduleRequests: RescheduleRequest[] = [
   {

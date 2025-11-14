@@ -57,7 +57,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     // 1. Dùng try...catch để xử lý lỗi mạng/server
     try {
       // 2. Gửi yêu cầu POST đến backend
-      const response = await fetch('http://localhost:5000/api/auth/login', { // <-- URL API đăng nhập
+      const response = await fetch('http://localhost:5001/api/auth/login', { // <-- URL API đăng nhập
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

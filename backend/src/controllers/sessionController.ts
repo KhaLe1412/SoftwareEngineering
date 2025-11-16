@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { mockSessions } from '../data/sessions.js';
+import { mockSessions } from '../data/session.js';
 import { mockOpenSessions } from '../data/open_session.js';
 
 // GET /api/sessions - Lấy tất cả sessions (có thể filter theo tutorId, studentId, status)

@@ -24,7 +24,6 @@ export interface Tutor extends User {
   expertise: string[];
   rating: number;
   totalSessions: number;
-  availability: Availability[];
 }
 
 export interface Admin extends User {
@@ -33,32 +32,32 @@ export interface Admin extends User {
   department: string;
 }
 
-export interface Availability {
-  id: string;
-  dayOfWeek: number; // 0-6
-  startTime: string;
-  endTime: string;
-  type: 'in-person' | 'online' | 'both';
+
+export interface StudentReview {
+  studentId: string;
+  rating: number;
+  comment: string;
+  submittedAt: string;
 }
 
 export interface Session {
   id: string;
   tutorId: string;
-  studentId?: string; // Optional for open sessions
   subject: string;
   date: string;
   startTime: string;
   endTime: string;
   type: 'in-person' | 'online';
-  status: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled' | 'open';
+  status: 'scheduled' | 'completed' | 'cancelled' | 'open' | 'full';
   location?: string;
   meetingLink?: string;
   notes?: string;
   feedback?: SessionFeedback;
   summary?: string;
   recordingUrl?: string;
-  maxStudents?: number; // For open sessions
-  enrolledStudents?: string[]; // For open sessions
+  maxStudents: number; // For open sessions
+  enrolledStudents: string[]; // For open sessions
+  reviews?: StudentReview[]; // Student reviews for completed sessions
 }
 
 export interface SessionFeedback {
@@ -102,18 +101,6 @@ export interface Message {
   relatedSessionId?: string;
 }
 
-export interface SessionRequest {
-  id: string;
-  studentId: string;
-  tutorId: string;
-  subject: string;
-  preferredDate: string;
-  preferredTime: string;
-  type: 'in-person' | 'online';
-  message?: string;
-  status: 'pending' | 'approved' | 'rejected';
-}
-
 export interface RescheduleRequest {
   id: string;
   sessionId: string;
@@ -127,14 +114,6 @@ export interface RescheduleRequest {
   createdAt: string;
 }
 
-export interface MaterialAccessRequest {
-  id: string;
-  sessionId: string;
-  studentId: string;
-  materialType: 'summary' | 'recording' | 'both';
-  status: 'pending' | 'approved' | 'rejected';
-  createdAt: string;
-}
 
 export interface StudentEvaluation {
   id: string;

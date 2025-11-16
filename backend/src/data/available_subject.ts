@@ -1,0 +1,22 @@
+export const availableSubjects = [
+  'Data Structures',
+  'Algorithms',
+  'Database Systems',
+  'Operating Systems',
+  'Computer Networks',
+  'Software Engineering',
+  'Web Development',
+  'Machine Learning',
+  'Circuit Analysis',
+  'Digital Electronics',
+  'Signal Processing',
+  'Control Systems',
+  'Calculus',
+  'Linear Algebra',
+  'Differential Equations',
+  'Probability and Statistics',
+  'Physics',
+  'Chemistry',
+  'Programming Fundamentals',
+  'Object-Oriented Programming'
+];

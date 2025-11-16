@@ -1,5 +1,6 @@
 import { UserRole } from "../types/type.js";
 
+// Demo accounts với username và password
 export const demoAccounts = [
   // Students
   { username: 'student1', password: 'pass123', role: 'student' as UserRole, userId: 's1', name: 'Nguyen Van An', type: 'Student' },

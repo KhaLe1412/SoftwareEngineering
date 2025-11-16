@@ -46,7 +46,7 @@ export function StudentAffairsDashboard() {
   // Mock data for student achievements
   const studentAchievements = mockStudents.map((student) => {
     const studentSessions = mockSessions.filter(
-      (s) => s.studentId === student.id,
+      (s) => s.enrolledStudents.includes(student.id),
     );
     const completedSessions = studentSessions.filter(
       (s) => s.status === "completed",

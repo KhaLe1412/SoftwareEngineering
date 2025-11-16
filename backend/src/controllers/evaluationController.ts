@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { mockStudentEvaluations } from '../data/student_evalution.js';
+import { mockStudentEvaluations } from '../data/student_evaluation.js';
 
 // GET /api/evaluations - Lấy tất cả evaluations (có thể filter)
 export const getAllEvaluations = (req: Request, res: Response) => {

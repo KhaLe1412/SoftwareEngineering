@@ -36,13 +36,13 @@ export function StudentProgressTab({ tutor }: StudentProgressTabProps) {
 
   const tutorSessions = mockSessions.filter(s => s.tutorId === tutor.id);
   
-  // Get unique students
-  const studentIds = Array.from(new Set(tutorSessions.map(s => s.studentId)));
+  // Get unique students from all enrolled students
+  const studentIds = Array.from(new Set(tutorSessions.flatMap(s => s.enrolledStudents)));
   const students = mockStudents.filter(s => studentIds.includes(s.id));
 
   // Mock progress data for each student
   const getStudentProgress = (studentId: string) => {
-    const sessions = tutorSessions.filter(s => s.studentId === studentId);
+    const sessions = tutorSessions.filter(s => s.enrolledStudents.includes(studentId));
     const completed = sessions.filter(s => s.status === 'completed').length;
     const total = sessions.length;
     const improvement = Math.floor(Math.random() * 30) + 10; // Mock improvement percentage

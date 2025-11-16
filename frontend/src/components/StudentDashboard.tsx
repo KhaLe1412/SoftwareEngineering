@@ -6,60 +6,28 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { Calendar, Clock, MapPin, Video, Star, BookOpen, Search, User } from 'lucide-react';
 import { mockTutors, mockSessions, mockLibraryResources } from '../lib/mock-data';
-import { FindTutorsTab } from './student/FindTutorsTab';
-import { MySessionsTab } from './student/MySessionsTab';
+import { EnhancedMySessionsTab } from './student/EnhancedMySessionsTab';
 import { LibraryTab } from './student/LibraryTab';
-import { ProfileTab } from './student/ProfileTab';
-import { OpenSessionsTab } from './student/OpenSessionsTab';
+import { EnhancedProfileTab } from './student/EnhancedProfileTab';
+import { JoinTab } from './student/JoinTab';
 import { MessagingPanel } from './MessagingPanel';
-import { Student, Session, Tutor } from '../types';
+import { Student } from '../types';
 import schoolLogo from 'figma:asset/5d30621cfc38347904bd973d0c562d26588d6b2f.png';
-//import { Session } from 'inspector/promises';
 
 interface StudentDashboardProps {
   student: Student;
 }
 
-
 export function StudentDashboard({ student }: StudentDashboardProps) {
   const [activeTab, setActiveTab] = useState('overview');
 
-  // const upcomingSessions = mockSessions.filter(
-  //   s => s.studentId === student.id && s.status === 'scheduled'
-  // );
+  const upcomingSessions = mockSessions.filter(
+    s => s.enrolledStudents.includes(student.id) && s.status === 'open'
+  );
 
-  // const completedSessions = mockSessions.filter(
-  //   s => s.studentId === student.id && s.status === 'completed'
-  // );
-
-  const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([])
-  const [completedSessions, setCompletedSessions] = useState<Session[]>([])
-  const [upcomingTutor, setUpcomingTutor] = useState<Tutor[]>([])
-
-
-  const handleGetOverview = async () => {
-    try {
-    const [upcomingRes, completedRes, tutorRes] = await Promise.all([
-      fetch(`'http://localhost:5000/api/session/?status=upcoming?studentId='${student.id}'`,{
-        method: "GET",
-      }),
-      fetch(`'http://localhost:5000/api/session/?status=completed?studentId='${student.id}'`,{
-        method:"GET"
-      }),
-      fetch(``)
-    ])
-
-    if (upcomingRes.ok){
-      const upcomingData = await upcomingRes.json();
-      setUpcomingSessions(upcomingData);
-    }
-
-    if (completedRes.ok){
-      const completedData = await completedRes.json();
-      setCompletedSessions(completedData)
-    }
-    }
-  }
+  const completedSessions = mockSessions.filter(
+    s => s.enrolledStudents.includes(student.id) && s.status === 'completed'
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -91,10 +59,9 @@ export function StudentDashboard({ student }: StudentDashboardProps) {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="find-tutors">Find Tutors</TabsTrigger>
-            <TabsTrigger value="open-sessions">Open Sessions</TabsTrigger>
+            <TabsTrigger value="join">Join</TabsTrigger>
             <TabsTrigger value="sessions">My Sessions</TabsTrigger>
             <TabsTrigger value="library">Library</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
@@ -200,16 +167,12 @@ export function StudentDashboard({ student }: StudentDashboardProps) {
             </Card>
           </TabsContent>
 
-          <TabsContent value="find-tutors">
-            <FindTutorsTab student={student} />
-          </TabsContent>
-
-          <TabsContent value="open-sessions">
-            <OpenSessionsTab student={student} />
+          <TabsContent value="join">
+            <JoinTab student={student} />
           </TabsContent>
 
           <TabsContent value="sessions">
-            <MySessionsTab student={student} />
+            <EnhancedMySessionsTab student={student} />
           </TabsContent>
 
           <TabsContent value="library">
@@ -217,7 +180,7 @@ export function StudentDashboard({ student }: StudentDashboardProps) {
           </TabsContent>
 
           <TabsContent value="profile">
-            <ProfileTab student={student} />
+            <EnhancedProfileTab student={student} />
           </TabsContent>
         </Tabs>
       </div>

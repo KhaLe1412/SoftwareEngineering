@@ -7,9 +7,9 @@ import { Calendar, Clock, Star, Users, TrendingUp } from 'lucide-react';
 import { Tutor } from '../types';
 import { mockSessions, mockStudents } from '../lib/mock-data';
 import { AvailabilityTab } from './tutor/AvailabilityTab';
-import { SessionsTab } from './tutor/SessionsTab';
+import { RequestsTab } from './tutor/RequestsTab';
 import { StudentProgressTab } from './tutor/StudentProgressTab';
-import { TutorProfileTab } from './tutor/TutorProfileTab';
+import { EnhancedTutorProfileTab } from './tutor/EnhancedTutorProfileTab';
 import { LibraryTab } from './student/LibraryTab';
 import { MessagingPanel } from './MessagingPanel';
 import schoolLogo from 'figma:asset/5d30621cfc38347904bd973d0c562d26588d6b2f.png';
@@ -22,10 +22,10 @@ export function TutorDashboard({ tutor }: TutorDashboardProps) {
   const [activeTab, setActiveTab] = useState('overview');
 
   const tutorSessions = mockSessions.filter(s => s.tutorId === tutor.id);
-  const upcomingSessions = tutorSessions.filter(s => s.status === 'scheduled');
+  const upcomingSessions = tutorSessions.filter(s => s.status === 'open');
   const completedSessions = tutorSessions.filter(s => s.status === 'completed');
   
-  const uniqueStudents = new Set(tutorSessions.map(s => s.studentId)).size;
+  const uniqueStudents = new Set(tutorSessions.map(s => s.enrolledStudents)).size;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -59,8 +59,8 @@ export function TutorDashboard({ tutor }: TutorDashboardProps) {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="sessions">Sessions</TabsTrigger>
             <TabsTrigger value="availability">Availability</TabsTrigger>
+            <TabsTrigger value="requests">Requests</TabsTrigger>
             <TabsTrigger value="progress">Student Progress</TabsTrigger>
             <TabsTrigger value="library">Library</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
@@ -136,25 +136,27 @@ export function TutorDashboard({ tutor }: TutorDashboardProps) {
                   <p className="text-gray-500">No upcoming sessions</p>
                 ) : (
                   upcomingSessions.map(session => {
-                    const student = mockStudents.find(s => s.id === session.studentId);
+                    const enrolledStudents = mockStudents.filter(s => session.enrolledStudents.includes(s.id));
+                    const displayNames = enrolledStudents.slice(0, 2).map(s => s.name);
+                    const hasMore = enrolledStudents.length > 2;
+                    const studentsText = hasMore 
+                      ? `${displayNames.join(', ')}...` 
+                      : displayNames.join(', ');
+                    
                     return (
-                      <div key={session.id} className="flex items-start gap-4 p-4 border rounded-lg">
-                        <Avatar>
-                          <AvatarImage src={student?.avatar} />
-                          <AvatarFallback>{student?.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <p>{session.subject}</p>
-                              <p className="text-sm text-gray-600">with {student?.name}</p>
-                            </div>
-                            <Badge>{session.type}</Badge>
+                      <div key={session.id} className="p-4 border rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p>{session.subject}</p>
+                            <p className="text-sm text-gray-600">
+                              {enrolledStudents.length > 0 ? studentsText : 'No students enrolled yet'}
+                            </p>
                           </div>
-                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                            <span>{session.date}</span>
-                            <span>{session.startTime} - {session.endTime}</span>
-                          </div>
+                          <Badge>{session.type}</Badge>
+                        </div>
+                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                          <span>{session.date}</span>
+                          <span>{session.startTime} - {session.endTime}</span>
                         </div>
                       </div>
                     );
@@ -164,12 +166,12 @@ export function TutorDashboard({ tutor }: TutorDashboardProps) {
             </Card>
           </TabsContent>
 
-          <TabsContent value="sessions">
-            <SessionsTab tutor={tutor} />
-          </TabsContent>
-
           <TabsContent value="availability">
             <AvailabilityTab tutor={tutor} />
+          </TabsContent>
+
+          <TabsContent value="requests">
+            <RequestsTab tutor={tutor} />
           </TabsContent>
 
           <TabsContent value="progress">
@@ -181,7 +183,7 @@ export function TutorDashboard({ tutor }: TutorDashboardProps) {
           </TabsContent>
 
           <TabsContent value="profile">
-            <TutorProfileTab tutor={tutor} />
+            <EnhancedTutorProfileTab tutor={tutor} />
           </TabsContent>
         </Tabs>
       </div>

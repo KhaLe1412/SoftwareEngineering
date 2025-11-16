@@ -12,23 +12,54 @@ import { LibraryTab } from './student/LibraryTab';
 import { ProfileTab } from './student/ProfileTab';
 import { OpenSessionsTab } from './student/OpenSessionsTab';
 import { MessagingPanel } from './MessagingPanel';
-import { Student } from '../types';
+import { Student, Session, Tutor } from '../types';
 import schoolLogo from 'figma:asset/5d30621cfc38347904bd973d0c562d26588d6b2f.png';
+//import { Session } from 'inspector/promises';
 
 interface StudentDashboardProps {
   student: Student;
 }
 
+
 export function StudentDashboard({ student }: StudentDashboardProps) {
   const [activeTab, setActiveTab] = useState('overview');
 
-  const upcomingSessions = mockSessions.filter(
-    s => s.studentId === student.id && s.status === 'scheduled'
-  );
+  // const upcomingSessions = mockSessions.filter(
+  //   s => s.studentId === student.id && s.status === 'scheduled'
+  // );
 
-  const completedSessions = mockSessions.filter(
-    s => s.studentId === student.id && s.status === 'completed'
-  );
+  // const completedSessions = mockSessions.filter(
+  //   s => s.studentId === student.id && s.status === 'completed'
+  // );
+
+  const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([])
+  const [completedSessions, setCompletedSessions] = useState<Session[]>([])
+  const [upcomingTutor, setUpcomingTutor] = useState<Tutor[]>([])
+
+
+  const handleGetOverview = async () => {
+    try {
+    const [upcomingRes, completedRes, tutorRes] = await Promise.all([
+      fetch(`'http://localhost:5000/api/session/?status=upcoming?studentId='${student.id}'`,{
+        method: "GET",
+      }),
+      fetch(`'http://localhost:5000/api/session/?status=completed?studentId='${student.id}'`,{
+        method:"GET"
+      }),
+      fetch(``)
+    ])
+
+    if (upcomingRes.ok){
+      const upcomingData = await upcomingRes.json();
+      setUpcomingSessions(upcomingData);
+    }
+
+    if (completedRes.ok){
+      const completedData = await completedRes.json();
+      setCompletedSessions(completedData)
+    }
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

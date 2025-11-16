@@ -203,7 +203,7 @@ export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
                   </div>
                 </div>
               </>
-            ) : (d
+            ) : (
               <div className="flex-1 flex items-center justify-center text-gray-500">
                 Select a conversation to start messaging
               </div>

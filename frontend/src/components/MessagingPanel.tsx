@@ -6,7 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { MessageCircle, Send, Bell, Calendar, AlertCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { MessageCircle, Send, Bell, Calendar, AlertCircle, Plus, Search } from 'lucide-react';
 import { mockMessages, mockStudents, mockTutors, mockSessions } from '../lib/mock-data';
 import { Message } from '../types';
 import { toast } from 'sonner@2.0.3';
@@ -21,6 +22,8 @@ export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
   const [messageText, setMessageText] = useState('');
   const [messages, setMessages] = useState(mockMessages);
   const [activeTab, setActiveTab] = useState('messages');
+  const [showNewChatDialog, setShowNewChatDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Get messages for current user
   const userMessages = messages.filter(
@@ -48,6 +51,33 @@ export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
   const getPartnerInfo = (partnerId: string) => {
     const allUsers = [...mockStudents, ...mockTutors];
     return allUsers.find(u => u.id === partnerId);
+  };
+
+  // Get available users to start new conversation
+  const getAvailableUsers = () => {
+    const potentialUsers = userRole === 'student' ? mockTutors : mockStudents;
+    return potentialUsers.filter(user => user.id !== userId);
+  };
+
+  // Filter users by search query
+  const filteredAvailableUsers = getAvailableUsers().filter(user =>
+    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const hasExistingConversation = (userId: string) => {
+    return conversationPartners.includes(userId);
+  };
+
+  const startNewConversation = (partnerId: string) => {
+    setSelectedConversation(partnerId);
+    setShowNewChatDialog(false);
+    setSearchQuery('');
+    if (hasExistingConversation(partnerId)) {
+      toast.success('Opened conversation');
+    } else {
+      toast.success('Conversation started');
+    }
   };
 
   const getConversationMessages = (partnerId: string) => {
@@ -135,8 +165,78 @@ export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
           <TabsContent value="messages" className="h-[calc(100vh-200px)]">
             <div className="flex h-full gap-4">
               {/* Conversations List */}
-              <div className="w-1/3 border-r pr-4">
-                <ScrollArea className="h-full">
+              <div className="w-1/3 border-r pr-4 flex flex-col">
+                {/* New Message Button */}
+                <div className="mb-3">
+                  <Dialog open={showNewChatDialog} onOpenChange={setShowNewChatDialog}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full" variant="outline">
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Message
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Start New Conversation</DialogTitle>
+                        <DialogDescription>
+                          Select a {userRole === 'student' ? 'tutor' : 'student'} to start messaging
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        {/* Search Input */}
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                          <Input
+                            placeholder="Search by name or email..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+                        
+                        {/* User List */}
+                        <ScrollArea className="h-[300px] border rounded-lg">
+                          <div className="p-2 space-y-1">
+                            {filteredAvailableUsers.length === 0 ? (
+                              <p className="text-sm text-gray-500 text-center py-8">
+                                No {userRole === 'student' ? 'tutors' : 'students'} found
+                              </p>
+                            ) : (
+                              filteredAvailableUsers.map(user => {
+                                const hasConversation = hasExistingConversation(user.id);
+                                return (
+                                  <div
+                                    key={user.id}
+                                    onClick={() => startNewConversation(user.id)}
+                                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                                  >
+                                    <Avatar className="h-10 w-10">
+                                      <AvatarImage src={user.avatar} />
+                                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-sm truncate">{user.name}</p>
+                                        {hasConversation && (
+                                          <Badge variant="secondary" className="text-xs">
+                                            Active
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                <ScrollArea className="flex-1">
                   <div className="space-y-2">
                     {conversationPartners.length === 0 ? (
                       <p className="text-sm text-gray-500 text-center py-8">No conversations yet</p>

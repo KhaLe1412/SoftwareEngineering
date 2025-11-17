@@ -311,12 +311,12 @@ export const mockSessions: Session[] = [
     maxStudents: 12,
     enrolledStudents: ['s1'],
     reviews: [
-      {
-        studentId: 's1',
-        rating: 5,
-        comment: 'Excellent session! The SQL join examples were very clear and practical.',
-        submittedAt: '2025-10-15T17:00:00Z'
-      }
+      // {
+      //   studentId: 's1',
+      //   rating: 5,
+      //   comment: 'Excellent session! The SQL join examples were very clear and practical.',
+      //   submittedAt: '2025-10-15T17:00:00Z'
+      // }
     ]
   },
   {

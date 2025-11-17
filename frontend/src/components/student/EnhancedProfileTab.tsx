@@ -68,7 +68,7 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
   
   // State to store session reviews
   const [sessionReviews, setSessionReviews] = useState<Record<string, SessionReview>>({});
-
+  
   const studentSessions = mockSessions.filter(s => s.enrolledStudents.includes(student.id));
   const completedSessions = studentSessions.filter(s => s.status === 'completed');
 

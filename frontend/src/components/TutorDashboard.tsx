@@ -25,7 +25,7 @@ export function TutorDashboard({ tutor }: TutorDashboardProps) {
   const upcomingSessions = tutorSessions.filter(s => s.status === 'open');
   const completedSessions = tutorSessions.filter(s => s.status === 'completed');
   
-  const uniqueStudents = new Set(tutorSessions.map(s => s.enrolledStudents)).size;
+  const uniqueStudents = new Set(completedSessions.map(s => s.enrolledStudents)).size;
 
   return (
     <div className="min-h-screen bg-gray-50">

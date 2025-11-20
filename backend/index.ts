@@ -4,15 +4,16 @@ import cors from "cors";
 
 // Import các routes
 import authRoutes from "./src/routes/auth.js";
-import userRoutes from "./src/routes/users.js";
-import sessionRoutes from "./src/routes/sessions.js";
-import sessionRequestRoutes from "./src/routes/sessionRequests.js";
-import matchRequestRoutes from "./src/routes/matchRequests.js";
-import messageRoutes from "./src/routes/messages.js";
+import analyticsRoutes from "./src/routes/analytics.js";
+import evaluationsRoutes from "./src/routes/evaluations.js";
 import libraryRoutes from "./src/routes/library.js";
-import rescheduleRequestRoutes from "./src/routes/rescheduleRequests.js";
-import materialRequestRoutes from "./src/routes/materialRequests.js";
-import evaluationRoutes from "./src/routes/evaluations.js";
+import messagesRoutes from "./src/routes/messages.js";
+import reportsRoutes from "./src/routes/reports.js";
+import requestsRoutes from "./src/routes/requests.js";
+import sessionsRoutes from "./src/routes/sessions.js";
+import studentsRoutes from "./src/routes/students.js";
+import tutorsRoutes from "./src/routes/tutors.js";
+
 
 const app = express();
 const PORT = 5001;
@@ -23,15 +24,16 @@ app.use(express.json()); // <-- RẤT QUAN TRỌNG: để đọc req.body
 
 // --- LẮP RÁP ROUTES ---
 app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/sessions", sessionRoutes);
-app.use("/api/session-requests", sessionRequestRoutes);
-app.use("/api/match-requests", matchRequestRoutes);
-app.use("/api/messages", messageRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/evaluations", evaluationsRoutes);
 app.use("/api/library", libraryRoutes);
-app.use("/api/reschedule-requests", rescheduleRequestRoutes);
-app.use("/api/material-requests", materialRequestRoutes);
-app.use("/api/evaluations", evaluationRoutes);
+app.use("/api/messages", messagesRoutes);
+app.use("/api/reports", reportsRoutes);
+app.use("/api/requests", requestsRoutes);
+app.use("/api/sessions", sessionsRoutes);
+app.use("/api/students", studentsRoutes);
+app.use("/api/tutors", tutorsRoutes);
+
 
 // Khởi động máy chủ
 app.listen(PORT, () => {

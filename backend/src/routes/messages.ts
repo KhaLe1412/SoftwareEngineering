@@ -1,24 +1,22 @@
 import express from 'express';
-import {
-  getAllMessages,
-  getMessageById,
-  createMessage,
-  updateMessage
-} from '../controllers/messageController.js';
+import { getMessages, getConversations, sendMessage, getNotifications, markMessageAsRead  } from '../components/messaging_service.js';
 
 const router = express.Router();
 
-// GET /api/messages
-router.get('/', getAllMessages);
+// GET api/messages/conversations
+router.get('/conversations', getConversations);
 
-// GET /api/messages/:id
-router.get('/:id', getMessageById);
+// GET /api/messages?partnerId=:id
+router.get('/', getMessages);
 
 // POST /api/messages
-router.post('/', createMessage);
+router.post('/', sendMessage);
 
-// PUT /api/messages/:id
-router.put('/:id', updateMessage);
+// GET /api/messages/notifications
+router.get('/notifications', getNotifications);
+
+// PATCH /api/messages/:id/read
+router.patch('/:id/read', markMessageAsRead);
 
 export default router;
 

@@ -1,16 +1,13 @@
 import express from 'express';
-import {
-  getAllLibraryResources,
-  getLibraryResourceById
-} from '../controllers/libraryController.js';
+import { getLibraryResources, downloadLibraryResource } from '../components/library_service.js';
 
 const router = express.Router();
 
-// GET /api/library
-router.get('/', getAllLibraryResources);
+// GET /api/library/resources
+router.get('/resources', getLibraryResources);
 
-// GET /api/library/:id
-router.get('/:id', getLibraryResourceById);
+// GET /api/library/resources/:id/download
+router.get('/resources/:id/download', downloadLibraryResource);
 
 export default router;
 

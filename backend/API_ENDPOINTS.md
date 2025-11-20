@@ -92,13 +92,13 @@ Tài liệu này liệt kê các API endpoints được định nghĩa trong h�
 ---
 
 ## 6. Requests
-**Base Path:** `/api` (Giả định router được mount tại root vì path trong file đã chứa `/requests`)
+**Base Path:** `/api/requests`
 *File nguồn: `requests.ts`*
 
 | Method | Endpoint | Controller Function | Mô tả |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/requests/reschedule/:id/approve` | `approveRescheduleRequest` | Chấp thuận yêu cầu dời lịch |
-| `POST` | `/requests/reschedule/:id/reject` | `rejectRescheduleRequest` | Từ chối yêu cầu dời lịch |
+| `POST` | `/reschedule/:id/approve` | `approveRescheduleRequest` | Chấp thuận yêu cầu dời lịch |
+| `POST` | `/reschedule/:id/reject` | `rejectRescheduleRequest` | Từ chối yêu cầu dời lịch |
 
 ---
 

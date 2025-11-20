@@ -4,9 +4,9 @@ import { approveRescheduleRequest, rejectRescheduleRequest } from '../components
 const router = express.Router();
 
 // POST /api/requests/reschedule/:id/approve
-router.post('/requests/reschedule/:id/approve', approveRescheduleRequest);
+router.post('/reschedule/:id/approve', approveRescheduleRequest);
 
 // POST /api/requests/reschedule/:id/reject
-router.post('/requests/reschedule/:id/reject', rejectRescheduleRequest);
+router.post('/reschedule/:id/reject', rejectRescheduleRequest);
 
 export default router;

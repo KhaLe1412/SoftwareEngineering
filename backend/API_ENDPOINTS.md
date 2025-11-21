@@ -66,7 +66,7 @@ Tài liệu này liệt kê các API endpoints được định nghĩa trong h�
 | `GET` | `/` | `getAllSessions` | Lấy danh sách các lớp học/phiên học |
 | `POST` | `/` | `createSessionManagement`| Tạo mới một lớp học |
 | `PATCH` | `/:id` | `updateSessionById` | Cập nhật thông tin lớp học |
-| `DELETE` | `/:id` | `markSessionAsCompleted` | Xóa (hoặc đánh dấu hoàn thành) lớp học |
+| `DELETE` | `/:id` | `deleteSessionById` | Xóa (hoặc đánh dấu hoàn thành) lớp học |
 | `POST` | `/:id/complete` | `markSessionAsCompleted` | Đánh dấu lớp học đã hoàn thành |
 | `POST` | `/:id/join` | `joinSession` | Sinh viên đăng ký tham gia lớp học |
 | `POST` | `/:id/leave` | `leaveSession` | Sinh viên hủy đăng ký/rời lớp học |

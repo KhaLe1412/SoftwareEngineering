@@ -13,8 +13,10 @@ import { send } from "process";
 // Query Params: tutorId, studentId, status
 // Description: Lấy tất cả session, gắn kèm thông tin của student và tutor
 // Request body: none
-// Response: Array of session info populated with student and tutor info
+// Response: {session: Session, students: Student[], tutor: Tutor}[]
 export const getAllSessions = (req: Request, res: Response) => {
+  console.log("Received getAllSessions request with query:", req.query);
+
   try {
     // Normalize and safely extract query params (handle arrays)
     const rawTutorId = req.query.tutorId;
@@ -68,12 +70,13 @@ export const getAllSessions = (req: Request, res: Response) => {
         (tut) => String(tut.id) === String(session.tutorId)
       );
       return {
-        ...session,
+        session: session,
         students: sessionStudents,
         tutor: sessionTutor || null,
       };
     });
 
+    console.log("Thực hiện lấy thông tin sessions thành công");
     return res.status(200).json(sessionManagements);
   } catch (error) {
     console.error("getAllSessions error:", error);
@@ -95,6 +98,9 @@ export const createSessionManagement = (req: Request, res: Response) => {
     // Get sessionData and tutorId from request body
     const sessionData = req.body.sessionData;
     const tutorId = req.body.tutorId;
+
+    console.log("Received createSessionManagement request with body:", req.body);
+    
     if (!sessionData || !tutorId) {
       return res.status(400).json({ message: "Missing required fields" });
     }
@@ -303,6 +309,11 @@ export const markSessionAsCompleted = (req: Request, res: Response) => {
     // Retrieve session ID from request parameters
     const { id } = req.params;
     const sessionIndex = mockSessions.findIndex((s) => s.id === id);
+
+
+    // Log the received request ID
+    console.log("Received markSessionAsCompleted request for ID:", id);
+    
     if (sessionIndex === -1) {
       return res.status(404).json({ message: "Session not found" });
     }

@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllSessions, createSessionManagement, updateSessionById, markSessionAsCompleted } from '../components/session_managements.js';
+import { getAllSessions, createSessionManagement, updateSessionById, markSessionAsCompleted, deleteSessionById } from '../components/session_managements.js';
 import { joinSession, leaveSession, createRescheduleRequest, auto_matchTutor } from '../components/request_managements.js';
 import { submitSessionFeedback, submitSessionReview } from '../components/evaluation_managements.js';
 const router = express.Router();
@@ -14,7 +14,7 @@ router.post('/', createSessionManagement);
 router.patch('/:id', updateSessionById);
 
 // DELETE /api/sessions/:id
-router.delete('/:id', markSessionAsCompleted);
+router.delete('/:id', deleteSessionById);
 
 // POST /api/sessions/:id/complete
 router.post('/:id/complete', markSessionAsCompleted);

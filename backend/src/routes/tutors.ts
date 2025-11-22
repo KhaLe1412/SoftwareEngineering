@@ -1,14 +1,31 @@
 import express from 'express';
-import { getTutorInfo, createTutorInfo, updateTutorInfo, deleteTutorInfo } from '../components/user_managements.js';
+import {
+  getAllTutors,
+  getTutorById,
+  createTutor,
+  updateTutor,
+  deleteTutor
+} from '../controllers/tutorController.js';
+import { requireUserId } from '../middleware/requireUserId.js';
 
 const router = express.Router();
+
+// Enforce userId on all routes
+router.use(requireUserId);
+
 // GET /api/tutors
-router.get('/', getTutorInfo);
-// PATCH /api/tutors/:id    
-router.patch('/:id', updateTutorInfo);
+router.get('/', getAllTutors);
+
+// GET /api/tutors/:id
+router.get('/:id', getTutorById);
+
 // POST /api/tutors
-router.post('/', createTutorInfo);
+router.post('/', createTutor);
+
+// PATCH /api/tutors/:id
+router.patch('/:id', updateTutor);
+
 // DELETE /api/tutors/:id
-router.delete('/:id', deleteTutorInfo);
+router.delete('/:id', deleteTutor);
 
 export default router;

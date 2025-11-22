@@ -6,7 +6,10 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon --exec \"node --loader ts-node/esm index.ts\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test-api.js",
+    "test:api": "node test-api.js",
+    "test:integration": "node test-integration.js",
+    "test:all": "node test-api.js && node test-integration.js"
   },
   "keywords": [],
   "author": "",

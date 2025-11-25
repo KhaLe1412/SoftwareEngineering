@@ -1,5 +1,11 @@
 import express from 'express';
-import {getAllEvaluations, getEvaluationById, updateEvaluation, deleteEvaluation, createEvaluation} from '../components/evaluation_managements.js';
+import {
+	getAllEvaluations,
+	getEvaluationById,
+	createEvaluation,
+	updateEvaluation,
+	deleteEvaluation,
+} from '../components/evaluation_managements.js';
 
 const router = express.Router();
 

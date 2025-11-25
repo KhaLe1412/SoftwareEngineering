@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Badge } from '../ui/badge';
@@ -22,6 +22,9 @@ interface StudentProgressTabProps {
 export function StudentProgressTab({ tutor }: StudentProgressTabProps) {
   const [evaluationDialogOpen, setEvaluationDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  // Current evaluation being edited (null if creating new)
+  const [currentEvaluationId, setCurrentEvaluationId] = useState<string | null>(null);
+  // ends
   const [evaluation, setEvaluation] = useState({
     understanding: 3,
     participation: 3,
@@ -34,6 +37,30 @@ export function StudentProgressTab({ tutor }: StudentProgressTabProps) {
     recommendations: ''
   });
 
+  const [evaluationsByStudent, setEvaluationsByStudent] = useState<Record<string, any[]>>({});
+
+  // Load all evaluations when component mounts or tutor changes
+  useEffect(() => {
+    loadAllStudentEvaluations();
+  }, [tutor.id]);
+
+  const loadAllStudentEvaluations = async () => {
+    try {
+      const res = await fetch(`http://localhost:5001/api/evaluations?tutorId=${tutor.id}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      // Group evaluations by studentId for fast lookup
+      const grouped: Record<string, any[]> = {};
+      data.forEach((evaluation: any) => {
+        if (!grouped[evaluation.studentId]) grouped[evaluation.studentId] = [];
+        grouped[evaluation.studentId].push(evaluation);
+      });
+      setEvaluationsByStudent(grouped);
+    } catch (error) {
+      console.error('loadAllStudentEvaluations error', error);
+    }
+  };
+
   const tutorSessions = mockSessions.filter(s => s.tutorId === tutor.id);
   
   // Get unique students from all enrolled students
@@ -41,29 +68,48 @@ export function StudentProgressTab({ tutor }: StudentProgressTabProps) {
   const students = mockStudents.filter(s => studentIds.includes(s.id));
 
   // Mock progress data for each student
+  // const getStudentProgress = (studentId: string) => {
+  //   const sessions = tutorSessions.filter(s => s.enrolledStudents.includes(studentId));
+  //   const completed = sessions.filter(s => s.status === 'completed').length;
+  //   const total = sessions.length;
+  //   const improvement = Math.floor(Math.random() * 30) + 10; // Mock improvement percentage
+    
+  //   return {
+  //     sessionsCompleted: completed,
+  //     totalSessions: total,
+  //     improvement,
+  //     trend: improvement > 20 ? 'up' : improvement > 10 ? 'stable' : 'down',
+  //     recentTopics: sessions.slice(-3).map(s => s.subject)
+  //   };
+  // };
+
   const getStudentProgress = (studentId: string) => {
     const sessions = tutorSessions.filter(s => s.enrolledStudents.includes(studentId));
     const completed = sessions.filter(s => s.status === 'completed').length;
     const total = sessions.length;
-    const improvement = Math.floor(Math.random() * 30) + 10; // Mock improvement percentage
-    
+
+    // Deterministic improvement: % completed over total (0-100)
+    const improvement = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const trend = improvement >= 60 ? 'up' : improvement >= 30 ? 'stable' : 'down';
+
     return {
       sessionsCompleted: completed,
       totalSessions: total,
       improvement,
-      trend: improvement > 20 ? 'up' : improvement > 10 ? 'stable' : 'down',
+      trend,
       recentTopics: sessions.slice(-3).map(s => s.subject)
     };
   };
 
   const handleOpenEvaluation = (student: Student) => {
     setSelectedStudent(student);
-    // Check if there's an existing evaluation
-    const existingEval = mockStudentEvaluations.find(
-      e => e.studentId === student.id && e.tutorId === tutor.id
-    );
+    // Get most recent evaluation for this student from cache
+    const existingEval = evaluationsByStudent[student.id]?.[0] || null;
     
     if (existingEval) {
+      //set id for evaluation
+      setCurrentEvaluationId(existingEval.id);
+      // ends
       setEvaluation({
         understanding: existingEval.skills.understanding,
         participation: existingEval.skills.participation,
@@ -76,6 +122,7 @@ export function StudentProgressTab({ tutor }: StudentProgressTabProps) {
         recommendations: existingEval.recommendations
       });
     } else {
+      setCurrentEvaluationId(null);
       setEvaluation({
         understanding: 3,
         participation: 3,
@@ -91,20 +138,91 @@ export function StudentProgressTab({ tutor }: StudentProgressTabProps) {
     setEvaluationDialogOpen(true);
   };
 
+  const fetchStudentEvaluations = async (studentId: string) => {
+    try {
+      const res = await fetch(`http://localhost:5001/api/evaluations?studentId=${studentId}&tutorId=${tutor.id}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      setEvaluationsByStudent((prev: any) => ({ ...prev, [studentId]: data }));
+      return data && data.length > 0 ? data[0] : null;
+    } catch (error) {
+      console.error('fetchStudentEvaluations error', error);
+      return null;
+    }
+  };
+
   const handleSaveEvaluation = () => {
     if (!evaluation.overallProgress || !evaluation.recommendations) {
       toast.error('Please fill in overall progress and recommendations');
       return;
     }
-    toast.success(`Evaluation saved for ${selectedStudent?.name}`);
-    setEvaluationDialogOpen(false);
-    setSelectedStudent(null);
+
+    (async () => {
+      try {
+        const sessionForStudent = tutorSessions.find(s => s.enrolledStudents.includes(selectedStudent?.id || ''));
+        const sessionId = sessionForStudent ? sessionForStudent.id : 'manual';
+
+        const payload: any = {
+          studentId: selectedStudent?.id,
+          tutorId: tutor.id,
+          sessionId,
+          skills: {
+            understanding: evaluation.understanding,
+            participation: evaluation.participation,
+            preparation: evaluation.preparation
+          },
+          attitude: evaluation.attitude,
+          testResults: evaluation.testScore && evaluation.testMaxScore ? {
+            score: parseInt(evaluation.testScore),
+            maxScore: parseInt(evaluation.testMaxScore),
+            notes: evaluation.testNotes
+          } : undefined,
+          overallProgress: evaluation.overallProgress,
+          recommendations: evaluation.recommendations
+        };
+
+        const isEditing = !!currentEvaluationId;
+        const method = isEditing ? 'PUT' : 'POST';
+        const url = isEditing 
+          ? `http://localhost:5001/api/evaluations/${currentEvaluationId}`
+          : 'http://localhost:5001/api/evaluations';
+
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          toast.error('Failed to save evaluation');
+          return;
+        }
+        const result = await res.json();
+        // Keep frontend mock-data in sync (so other components that read mockStudentEvaluations reflect new eval)
+        try {
+          if (!isEditing) {
+            mockStudentEvaluations.unshift(result);
+          }
+        } catch (e) {
+          // ignore if immutable
+        }
+
+        toast.success(`Evaluation ${isEditing ? 'updated' : 'saved'} for ${selectedStudent?.name}`);
+        // Refresh cache
+        await loadAllStudentEvaluations();
+        setEvaluationDialogOpen(false);
+        setSelectedStudent(null);
+        setCurrentEvaluationId(null);
+      } catch (error) {
+        console.error('save evaluation error', error);
+        toast.error('Failed to save evaluation');
+      }
+    })();
   };
 
   const getStudentEvaluations = (studentId: string) => {
-    return mockStudentEvaluations.filter(
-      e => e.studentId === studentId && e.tutorId === tutor.id
-    );
+    const evals = evaluationsByStudent[studentId] || [];
+    return evals.filter((e: any) => e.tutorId === tutor.id);
   };
 
   return (
@@ -121,7 +239,8 @@ export function StudentProgressTab({ tutor }: StudentProgressTabProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {students.map(student => {
           const progress = getStudentProgress(student.id);
-          const studentSessions = tutorSessions.filter(s => s.studentId === student.id);
+          // const studentSessions = tutorSessions.filter(s => s.studentId === student.id);
+          const studentSessions = tutorSessions.filter(s => s.enrolledStudents.includes(student.id));
           
           return (
             <Card key={student.id}>

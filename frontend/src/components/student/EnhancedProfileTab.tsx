@@ -614,7 +614,40 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
   
   // State to store session reviews
   const [sessionReviews, setSessionReviews] = useState<Record<string, SessionReview>>({});
-  
+
+  // Load session reviews from backend so they persist across navigation
+  useEffect(() => {
+    loadAllSessionReviews();
+  }, [student.id]);
+
+  const loadAllSessionReviews = async () => {
+    try {
+      const res = await fetch(`http://localhost:5001/api/sessions?studentId=${student.id}&status=completed`);
+      if (!res.ok) return;
+      const data = await res.json(); // [{ session, students, tutor }]
+      const map: Record<string, SessionReview> = {};
+      data.forEach((item: any) => {
+        const session = item.session;
+        const review = session.reviews?.find((r: any) => r.studentId === student.id);
+        if (review) {
+          map[session.id] = {
+            sessionId: session.id,
+            rating: review.rating,
+            comment: review.comment || review.summary || ''
+          };
+        }
+      });
+      setSessionReviews(map);
+      return map;
+    } catch (error) {
+      console.error('loadAllSessionReviews error', error);
+    }
+  };
+
+  // Debug: log when reviewData changes
+  useEffect(() => {
+    console.log('Student reviewData changed', reviewData);
+  }, [reviewData]);
   const studentSessions = mockSessions.filter(s => s.enrolledStudents.includes(student.id));
   const completedSessions = studentSessions.filter(s => s.status === 'completed');
 
@@ -707,24 +740,32 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
   };
 
   const handleOpenReviewDialog = (sessionId: string) => {
-    setCurrentReviewSessionId(sessionId);
-    const session = mockSessions.find(s => s.id === sessionId);
-    const existingReview = sessionReviews[sessionId] || session?.reviews?.find(r => r.studentId === student.id);
-    if (existingReview) {
-      setReviewData({
-        rating: existingReview.rating || 5,
-        comment: existingReview.comment || ''
-      });
-    } else {
-      setReviewData({
-        rating: 5,
-        comment: ''
-      });
-    }
-    setReviewDialogOpen(true);
+    (async () => {
+      setCurrentReviewSessionId(sessionId);
+      // Prefer cached review; if missing, reload from backend to get latest
+      let existingReview = sessionReviews[sessionId];
+      if (!existingReview) {
+        const map = await loadAllSessionReviews();
+        existingReview = (map && map[sessionId]) || sessionReviews[sessionId];
+      }
+
+      const session = mockSessions.find(s => s.id === sessionId);
+      if (existingReview) {
+        setReviewData({
+          rating: existingReview.rating || 5,
+          comment: existingReview.comment || ''
+        });
+      } else {
+        setReviewData({
+          rating: 5,
+          comment: ''
+        });
+      }
+      setReviewDialogOpen(true);
+    })();
   };
 
-  const handleSaveReview = () => {
+  const handleSaveReview = async () => {
     if (!currentReviewSessionId) return;
 
     if (!reviewData.comment.trim()) {
@@ -732,18 +773,37 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
       return;
     }
 
-    setSessionReviews(prev => ({
-      ...prev,
-      [currentReviewSessionId]: {
-        sessionId: currentReviewSessionId,
-        rating: reviewData.rating,
-        comment: reviewData.comment
+    try {
+      const res = await fetch(`http://localhost:5001/api/sessions/${currentReviewSessionId}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId: student.id, rating: reviewData.rating, comment: reviewData.comment })
+      });
+      if (!res.ok) {
+        toast.error('Failed to save review');
+        return;
       }
-    }));
 
-    toast.success('Session review saved successfully!');
-    setReviewDialogOpen(false);
-    setCurrentReviewSessionId(null);
+      // Optimistically update local cache so rating/comment appear immediately
+      setSessionReviews(prev => ({
+        ...prev,
+        [currentReviewSessionId]: {
+          sessionId: currentReviewSessionId,
+          rating: reviewData.rating,
+          comment: reviewData.comment
+        }
+      }));
+
+      // Refresh reviews from backend so UI reflects persisted data (keeps authoritative copy)
+      await loadAllSessionReviews();
+
+      toast.success('Session review saved successfully!');
+      setReviewDialogOpen(false);
+      setCurrentReviewSessionId(null);
+    } catch (error) {
+      console.error('save review error', error);
+      toast.error('Failed to save review');
+    }
   };
 
   const availableToAdd = AVAILABLE_SUBJECTS.filter(subject => !supportNeeds.includes(subject));
@@ -1080,7 +1140,13 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
                 {[1, 2, 3, 4, 5].map(rating => (
                   <button
                     key={rating}
-                    onClick={() => setReviewData({...reviewData, rating})}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Student star clicked', { clickedRating: rating, before: reviewData.rating });
+                      setReviewData(prev => ({ ...prev, rating }));
+                    }}
                     className="focus:outline-none"
                   >
                     <Star 
@@ -1097,9 +1163,9 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
             </div>
             <div>
               <Label>Review Comment</Label>
-              <Textarea
+                <Textarea
                 value={reviewData.comment}
-                onChange={(e) => setReviewData({...reviewData, comment: e.target.value})}
+                onChange={(e) => setReviewData(prev => ({ ...prev, comment: e.target.value }))}
                 placeholder="Share your experience with this session..."
                 className="mt-2"
                 rows={5}

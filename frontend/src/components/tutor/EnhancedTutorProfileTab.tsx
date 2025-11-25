@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -86,6 +86,35 @@ export function EnhancedTutorProfileTab({ tutor }: EnhancedTutorProfileTabProps)
     recordingUrl: ''
   });
 
+  // Load tutor session feedback from backend so tutor's feedback persists across navigation
+  useEffect(() => {
+    loadAllTutorFeedbacks();
+  }, [tutor.id]);
+
+  const loadAllTutorFeedbacks = async () => {
+    try {
+      const res = await fetch(`http://localhost:5001/api/sessions?tutorId=${tutor.id}&status=completed`);
+      if (!res.ok) return;
+      const data = await res.json(); // [{ session, students, tutor }]
+      const map: Record<string, SessionReview> = {};
+      data.forEach((item: any) => {
+        const session = item.session;
+        const fb = session.feedback;
+        if (fb) {
+          map[session.id] = {
+            sessionId: session.id,
+            rating: fb.studentRating ?? 5,
+            summary: fb.tutorProgress ?? '',
+            recordingUrl: fb.tutorNotes ?? ''
+          };
+        }
+      });
+      setSessionReviews(prev => ({ ...prev, ...map }));
+    } catch (error) {
+      console.error('loadAllTutorFeedbacks error', error);
+    }
+  };
+
   const tutorSessions = mockSessions.filter(s => s.tutorId === tutor.id);
   const completedSessions = tutorSessions
     .filter(s => s.status === 'completed')
@@ -158,17 +187,21 @@ export function EnhancedTutorProfileTab({ tutor }: EnhancedTutorProfileTabProps)
     const existingReview = sessionReviews[sessionId];
     const session = mockSessions.find(s => s.id === sessionId);
     if (existingReview) {
-      setReviewData({
+      const reviewDataToSet = {
         rating: existingReview.rating || 5,
         summary: existingReview.summary || '',
         recordingUrl: existingReview.recordingUrl || session?.recordingUrl || ''
-      });
+      };
+      console.log('Opening dialog with existing review:', reviewDataToSet);
+      setReviewData(reviewDataToSet);
     } else {
-      setReviewData({
+      const reviewDataToSet = {
         rating: 5,
         summary: '',
         recordingUrl: session?.recordingUrl || ''
-      });
+      };
+      console.log('Opening dialog with default review:', reviewDataToSet);
+      setReviewData(reviewDataToSet);
     }
     setReviewDialogOpen(true);
   };
@@ -181,19 +214,37 @@ export function EnhancedTutorProfileTab({ tutor }: EnhancedTutorProfileTabProps)
       return;
     }
 
-    setSessionReviews(prev => ({
-      ...prev,
-      [currentReviewSessionId]: {
-        sessionId: currentReviewSessionId,
-        rating: reviewData.rating,
-        summary: reviewData.summary,
-        recordingUrl: reviewData.recordingUrl
-      }
-    }));
+    console.log('Tutor saving review with data:', reviewData);
 
-    toast.success('Session review saved successfully!');
-    setReviewDialogOpen(false);
-    setCurrentReviewSessionId(null);
+    (async () => {
+      try {
+        const payload = {
+          studentRating: reviewData.rating,
+          tutorProgress: reviewData.summary,
+          tutorNotes: reviewData.recordingUrl
+        };
+        console.log('Tutor feedback payload:', payload);
+        const res = await fetch(`http://localhost:5001/api/sessions/${currentReviewSessionId}/feedback`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          toast.error('Failed to save feedback');
+          return;
+        }
+
+        // refresh feedbacks from backend
+        await loadAllTutorFeedbacks();
+
+        toast.success('Session review saved successfully!');
+        setReviewDialogOpen(false);
+        setCurrentReviewSessionId(null);
+      } catch (error) {
+        console.error('save tutor review error', error);
+        toast.error('Failed to save feedback');
+      }
+    })();
   };
 
   // Filter available subjects to exclude already added ones
@@ -499,10 +550,16 @@ export function EnhancedTutorProfileTab({ tutor }: EnhancedTutorProfileTabProps)
             <div>
               <Label>Rating (1-5)</Label>
               <div className="flex items-center gap-2 mt-2">
-                {[1, 2, 3, 4, 5].map(rating => (
+                {[1,2,3,4,5].map(rating => (
                   <button
                     key={rating}
-                    onClick={() => setReviewData({...reviewData, rating})}
+                    type="button"
+                    onClick={(e) => { 
+                      e.preventDefault(); 
+                      e.stopPropagation(); 
+                      console.log('Tutor star clicked:', rating, 'prev rating:', reviewData.rating);
+                      setReviewData(prev => ({ ...prev, rating })); 
+                    }}
                     className="focus:outline-none"
                   >
                     <Star 
@@ -521,7 +578,7 @@ export function EnhancedTutorProfileTab({ tutor }: EnhancedTutorProfileTabProps)
               <Label>Session Summary *</Label>
               <Textarea
                 value={reviewData.summary}
-                onChange={(e) => setReviewData({...reviewData, summary: e.target.value})}
+                onChange={(e) => setReviewData(prev => ({ ...prev, summary: e.target.value }))}
                 placeholder="Describe what was covered, student's progress, and any recommendations..."
                 className="mt-2"
                 rows={5}
@@ -531,7 +588,7 @@ export function EnhancedTutorProfileTab({ tutor }: EnhancedTutorProfileTabProps)
               <Label>Recording URL (Optional)</Label>
               <Input
                 value={reviewData.recordingUrl}
-                onChange={(e) => setReviewData({...reviewData, recordingUrl: e.target.value})}
+                onChange={(e) => setReviewData(prev => ({ ...prev, recordingUrl: e.target.value }))}
                 placeholder="https://example.com/recordings/session.mp4"
                 className="mt-2"
               />

@@ -1,6 +1,10 @@
 // Trong /routes/auth.ts
+// import express from 'express';
+// import { handleLogin, changePassword } from '../components/auth_managements.js';   
 import express from 'express';
-import { handleLogin, changePassword } from '../components/auth_managements.js';   
+import { handleLogin, changePassword }  from '../controllers/authController.js'; // Import logic xử lý
+import { verifyToken } from '../middleware/authMiddleware.js';  // Import bảo vệ middleware
+
 
 const router = express.Router();
 

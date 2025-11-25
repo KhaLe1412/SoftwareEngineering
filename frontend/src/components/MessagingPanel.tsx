@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -10,14 +10,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { MessageCircle, Send, Bell, Calendar, AlertCircle, Plus, Search } from 'lucide-react';
 import { mockMessages, mockStudents, mockTutors, mockSessions } from '../lib/mock-data';
 import { Message } from '../types';
-import { toast } from 'sonner';
+import { toast } from 'sonner@2.0.3';
 
 interface MessagingPanelProps {
   userId: string;
   userRole: 'student' | 'tutor';
 }
-
-const API_BASE = 'http://localhost:5001/api'; // nếu backend chạy trên port khác thì chỉnh lại
 
 export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
@@ -27,42 +25,7 @@ export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
   const [showNewChatDialog, setShowNewChatDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // ⬇️ THÊM: hàm fetch tin nhắn cho 1 cuộc hội thoại
-  const fetchConversationMessages = async (partnerId: string) => {
-    try {
-      const params = new URLSearchParams({
-        userId,
-        partnerId,
-      });
-      const res = await fetch(`${API_BASE}/messages?${params.toString()}`);
-      if (!res.ok) {
-        throw new Error('Failed to fetch messages');
-      }
-      const data: Message[] = await res.json();
-      setMessages(data);
-    } catch (err) {
-      console.error(err);
-      // nếu lỗi thì bạn có thể toast hoặc giữ nguyên state cũ
-      // toast.error('Không tải được tin nhắn');
-    }
-  };
-
-  // ⬇️ THÊM: khi chọn 1 cuộc hội thoại, bắt đầu fetch + poll tin nhắn
-  useEffect(() => {
-    if (!selectedConversation) return;
-
-    // fetch ngay lần đầu
-    fetchConversationMessages(selectedConversation);
-
-    // sau đó poll mỗi 2 giây để cập nhật tin mới
-    const interval = setInterval(() => {
-      fetchConversationMessages(selectedConversation);
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [selectedConversation, userId]);
-
-  // Get messages for current user (trên state messages đã fetch)
+  // Get messages for current user
   const userMessages = messages.filter(
     m => m.senderId === userId || m.receiverId === userId
   );
@@ -73,7 +36,7 @@ export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
     m => m.type === 'reschedule-notification' || m.type === 'material-request'
   );
 
-  // Get unique conversation partners (chỉ tính trong messages hiện có)
+  // Get unique conversation partners (only for regular messages)
   const conversationPartners = Array.from(
     new Set(
       regularMessages.map(m => m.senderId === userId ? m.receiverId : m.senderId)
@@ -96,29 +59,32 @@ export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
     return potentialUsers.filter(user => user.id !== userId);
   };
 
+  // Filter users by search query
   const filteredAvailableUsers = getAvailableUsers().filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const hasExistingConversation = (partnerId: string) => {
-    return conversationPartners.includes(partnerId);
+  const hasExistingConversation = (userId: string) => {
+    return conversationPartners.includes(userId);
   };
 
   const startNewConversation = (partnerId: string) => {
     setSelectedConversation(partnerId);
     setShowNewChatDialog(false);
     setSearchQuery('');
-    // khi selectedConversation đổi, useEffect phía trên sẽ tự fetch
+    if (hasExistingConversation(partnerId)) {
+      toast.success('Opened conversation');
+    } else {
+      toast.success('Conversation started');
+    }
   };
 
   const getConversationMessages = (partnerId: string) => {
-    // bây giờ messages đã chỉ chứa conversation hiện tại
-    // nhưng để chắc ăn vẫn filter thêm
     return messages
-      .filter(m =>
+      .filter(m => 
         ((m.senderId === userId && m.receiverId === partnerId) ||
-          (m.senderId === partnerId && m.receiverId === userId)) &&
+        (m.senderId === partnerId && m.receiverId === userId)) &&
         (!m.type || m.type === 'regular')
       )
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -130,43 +96,26 @@ export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
   };
 
   const markNotificationAsRead = (notificationId: string) => {
-    setMessages(prev =>
-      prev.map(m =>
-        m.id === notificationId ? { ...m, read: true } : m
-      )
-    );
+    setMessages(messages.map(m => 
+      m.id === notificationId ? { ...m, read: true } : m
+    ));
   };
 
-  // ⬇️ SỬA handleSendMessage để gửi lên BE rồi refetch
-  const handleSendMessage = async () => {
+  const handleSendMessage = () => {
     if (!messageText.trim() || !selectedConversation) return;
 
-    const payload = {
+    const newMessage: Message = {
+      id: `msg${Date.now()}`,
       senderId: userId,
       receiverId: selectedConversation,
       content: messageText.trim(),
+      timestamp: new Date().toISOString(),
+      read: false
     };
 
-    try {
-      const res = await fetch(`${API_BASE}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to send message');
-      }
-
-      const saved: Message = await res.json();
-      // cập nhật local state ngay cho mượt
-      setMessages(prev => [...prev, saved]);
-      setMessageText('');
-      toast.success('Message sent');
-    } catch (err) {
-      console.error(err);
-      toast.error('Không gửi được tin nhắn');
-    }
+    setMessages([...messages, newMessage]);
+    setMessageText('');
+    toast.success('Message sent');
   };
 
   return (

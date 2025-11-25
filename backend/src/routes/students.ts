@@ -1,31 +1,14 @@
 import express from 'express';
-import {
-  getAllStudents,
-  getStudentById,
-  createStudent,
-  updateStudent,
-  deleteStudent
-} from '../controllers/studentController.js';
-import { requireUserId } from '../middleware/requireUserId.js';
+import { createStudentInfo, deleteStudentInfo, getStudentInfo, updateStudentInfo } from '../components/user_managements.js';
 
 const router = express.Router();
-
-// Enforce userId on all routes
-router.use(requireUserId);
-
 // GET /api/students
-router.get('/', getAllStudents);
-
-// GET /api/students/:id
-router.get('/:id', getStudentById);
-
-// POST /api/students
-router.post('/', createStudent);
-
+router.get('/', getStudentInfo);
 // PATCH /api/students/:id
-router.patch('/:id', updateStudent);
-
+router.patch('/:id', updateStudentInfo);
+// POST /api/students
+router.post('/', createStudentInfo);
 // DELETE /api/students/:id
-router.delete('/:id', deleteStudent);
+router.delete('/:id', deleteStudentInfo);
 
 export default router;

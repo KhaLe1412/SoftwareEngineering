@@ -1,0 +1,58 @@
+[
+  {
+    "userId": "s1",
+    "username": "student1",
+    "password": "fat001",
+    "role": "student",
+    "name": "Nguyen Van An",
+    "type": "Student"
+  },
+  {
+    "userId": "s2",
+    "username": "student2",
+    "password": "pass123",
+    "role": "student",
+    "name": "Tran Thi Binh",
+    "type": "Student"
+  },
+  {
+    "userId": "t1",
+    "username": "tutor1",
+    "password": "pass123",
+    "role": "tutor",
+    "name": "Dr. Le Minh Chau",
+    "type": "Tutor"
+  },
+  {
+    "userId": "t2",
+    "username": "tutor2",
+    "password": "pass123",
+    "role": "tutor",
+    "name": "Dr. Pham Hoang Dung",
+    "type": "Tutor"
+  },
+  {
+    "userId": "admin1",
+    "username": "admin",
+    "password": "admin123",
+    "role": "admin",
+    "name": "Nguyen Van Admin",
+    "type": "Administrator"
+  },
+  {
+    "userId": "aa1",
+    "username": "academic",
+    "password": "pass123",
+    "role": "academic-affairs",
+    "name": "Academic Affairs",
+    "type": "Academic Affairs"
+  },
+  {
+    "userId": "sa1",
+    "username": "student-affairs",
+    "password": "pass123",
+    "role": "student-affairs",
+    "name": "Student Affairs",
+    "type": "Student Affairs"
+  }
+]

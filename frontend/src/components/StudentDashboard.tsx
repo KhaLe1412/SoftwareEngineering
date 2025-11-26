@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -11,7 +11,7 @@ import { LibraryTab } from './student/LibraryTab';
 import { EnhancedProfileTab } from './student/EnhancedProfileTab';
 import { JoinTab } from './student/JoinTab';
 import { MessagingPanel } from './MessagingPanel';
-import { Student } from '../types';
+import { Student, Session } from '../types';
 import schoolLogo from 'figma:asset/5d30621cfc38347904bd973d0c562d26588d6b2f.png';
 
 interface StudentDashboardProps {
@@ -20,6 +20,26 @@ interface StudentDashboardProps {
 
 export function StudentDashboard({ student }: StudentDashboardProps) {
   const [activeTab, setActiveTab] = useState('overview');
+
+  const [sessions, setSessions] = useState<Session[]>([]);
+
+  const fetchSessions = async () => {
+    try {
+      const res = await fetch(`http://localhost:5001/api/sessions`);
+      if (res.ok) {
+        const data = await res.json();
+        const cleanSessions = data.map((item: any) => item.session);
+        setSessions(cleanSessions);
+      }
+    }
+    catch (error) {
+      console.error("Error fetching sessions:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSessions();
+  }, []);
 
   const upcomingSessions = mockSessions.filter(
     s => s.enrolledStudents.includes(student.id) && s.status === 'open'
@@ -168,7 +188,11 @@ export function StudentDashboard({ student }: StudentDashboardProps) {
           </TabsContent>
 
           <TabsContent value="join">
-            <JoinTab student={student} />
+            <JoinTab 
+                student={student} 
+                sessions={sessions} 
+                onJoinSuccess={fetchSessions}
+            />
           </TabsContent>
 
           <TabsContent value="sessions">

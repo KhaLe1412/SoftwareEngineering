@@ -9,15 +9,17 @@ import { Textarea } from '../ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Calendar, Clock, MapPin, Video, Users, UserPlus, Search, Sparkles, X, LogOut } from 'lucide-react';
-import { mockSessions, mockTutors, mock } from '../../lib/mock-data';
+import { mockTutors } from '../../lib/mock-data'; 
 import { Student, Session } from '../../types';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface JoinTabProps {
   student: Student;
+  sessions: Session[]; 
+  onJoinSuccess: () => void;
 }
 
-export function JoinTab({ student }: JoinTabProps) {
+export function JoinTab({ student, sessions, onJoinSuccess }: JoinTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSubject, setFilterSubject] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
@@ -26,8 +28,8 @@ export function JoinTab({ student }: JoinTabProps) {
   const [matchedSession, setMatchedSession] = useState<Session | null>(null);
   const [isMatching, setIsMatching] = useState(false);
 
-  // Get all open sessions
-  const openSessions = mockSessions.filter(s => s.status === 'open');
+  // Get all open sessions from real data
+  const openSessions = sessions.filter(s => s.status === 'open');
   
   // Get unique subjects
   const uniqueSubjects = Array.from(new Set(openSessions.map(s => s.subject)));
@@ -41,8 +43,8 @@ export function JoinTab({ student }: JoinTabProps) {
   );
 
   // Filter sessions based on search and filters
-  const filterSessions = (sessions: Session[]) => {
-    return sessions.filter(session => {
+  const filterSessions = (sessionsList: Session[]) => {
+    return sessionsList.filter(session => {
       const tutor = mockTutors.find(t => t.id === session.tutorId);
       const matchesSearch = 
         session.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -57,12 +59,57 @@ export function JoinTab({ student }: JoinTabProps) {
   const filteredEnrolledSessions = filterSessions(enrolledSessions);
   const filteredAvailableSessions = filterSessions(availableSessions);
 
-  const handleJoinSession = (sessionId: string, sessionTitle: string) => {
-    toast.success(`Successfully joined session: ${sessionTitle}`);
+  const handleJoinSession = async (session: Session) => {
+    try {
+      const currentEnrolled = session.enrolledStudents || [];
+      const newEnrolledList = [...currentEnrolled, student.id];
+
+      const res = await fetch(`http://localhost:5001/api/sessions/${session.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          updateData: {
+            enrolledStudents: newEnrolledList
+          }
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to join session');
+
+      toast.success(`Successfully joined session: ${session.subject}`);
+      
+      onJoinSuccess();
+      
+    } catch (error) {
+      console.error(error);
+      toast.error('Error joining session');
+    }
   };
 
-  const handleLeaveSession = (sessionId: string, sessionTitle: string) => {
-    toast.success(`Left session: ${sessionTitle}`);
+  const handleLeaveSession = async (session: Session) => {
+     try {
+      const currentEnrolled = session.enrolledStudents || [];
+      const newEnrolledList = currentEnrolled.filter(id => id !== student.id);
+
+      const res = await fetch(`http://localhost:5001/api/sessions/${session.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          updateData: {
+            enrolledStudents: newEnrolledList
+          }
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to leave session');
+
+      toast.success(`Left session: ${session.subject}`);
+      onJoinSuccess(); // Refresh dashboard
+
+    } catch (error) {
+      console.error(error);
+      toast.error('Error leaving session');
+    }
   };
 
   const handleAutoMatch = () => {
@@ -73,19 +120,16 @@ export function JoinTab({ student }: JoinTabProps) {
 
     setIsMatching(true);
     
-    // Simulate AI matching (in real app, this would call an AI API)
+    // Simulate AI matching
     setTimeout(() => {
-      // Simple matching logic based on keywords
       const keywords = autoMatchDescription.toLowerCase();
-      let bestMatch = availableSessions[0];
+      let bestMatch = availableSessions[0]; 
       
-      // Try to find a match based on student's support needs
       for (const session of availableSessions) {
         if (keywords.includes(session.subject.toLowerCase())) {
           bestMatch = session;
           break;
         }
-        // Check if any of student's support needs match
         for (const need of student.supportNeeds) {
           if (keywords.includes(need.toLowerCase()) && 
               session.subject.toLowerCase().includes(need.toLowerCase())) {
@@ -95,14 +139,14 @@ export function JoinTab({ student }: JoinTabProps) {
         }
       }
 
-      setMatchedSession(bestMatch);
+      setMatchedSession(bestMatch || null);
       setIsMatching(false);
     }, 1500);
   };
 
   const handleAcceptMatch = () => {
     if (matchedSession) {
-      handleJoinSession(matchedSession.id, matchedSession.subject);
+      handleJoinSession(matchedSession);
       setAutoMatchDialogOpen(false);
       setAutoMatchDescription('');
       setMatchedSession(null);
@@ -182,7 +226,7 @@ export function JoinTab({ student }: JoinTabProps) {
               <Button 
                 variant="outline"
                 className="w-full border-red-300 text-red-600 hover:bg-red-50"
-                onClick={() => handleLeaveSession(session.id, session.subject)}
+                onClick={() => handleLeaveSession(session)} 
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Leave Session
@@ -190,7 +234,7 @@ export function JoinTab({ student }: JoinTabProps) {
             ) : spotsLeft > 0 ? (
               <Button 
                 className="w-full"
-                onClick={() => handleJoinSession(session.id, session.subject)}
+                onClick={() => handleJoinSession(session)} 
               >
                 <UserPlus className="h-4 w-4 mr-2" />
                 Join Session ({spotsLeft} spots left)

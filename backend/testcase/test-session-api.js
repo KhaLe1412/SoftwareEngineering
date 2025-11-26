@@ -182,13 +182,33 @@ async function testCompleteSession(sessionId) {
     }
 }
 
-// 6. Test Delete Session
-async function testDeleteSession(sessionId) {
+// 6. Test Get Session By ID
+async function testGetSessionById(sessionId) {
     if (!sessionId) {
         console.log('\nTest 6: Skipped (No session ID)');
         return;
     }
-    console.log(`\nTest 6: DELETE /api/sessions/${sessionId}`);
+    console.log(`\nTest 6: GET /api/sessions/${sessionId}`);
+    
+    const result = await apiCall('GET', `/sessions/${sessionId}`);
+    console.log(`Status: ${result.status}`);
+    
+    if (result.ok) {
+      console.log(`Success! Retrieved session for tutor: ${result.data.tutor?.name || 'Unknown'}`);
+      console.log(`Session details:`, result.data.session);
+      console.log(`Enrolled students:`, result.data.students);
+    } else {
+      console.log(`Failed: ${result.data?.message || result.error}`);
+    }
+}
+
+// 7. Test Delete Session
+async function testDeleteSession(sessionId) {
+    if (!sessionId) {
+        console.log('\nTest 7: Skipped (No session ID)');
+        return;
+    }
+    console.log(`\nTest 7: DELETE /api/sessions/${sessionId}`);
     
     // Lưu ý: API hiện tại của bạn dùng hàm 'markSessionAsCompleted' cho DELETE
     // Điều này có vẻ không đúng semantic (DELETE nên xóa hẳn), nhưng ta test theo code hiện có
@@ -222,8 +242,10 @@ async function runSessionTests() {
 
     // 5. Complete
     await testCompleteSession(newId);
+    // 6. Get By ID
+    await testGetSessionById(newId);
 
-    // 6. Delete (Mark Completed in current implementation)
+    // 7. Delete (Mark Completed in current implementation)
     await testDeleteSession(newId);
     
     console.log('\n' + '='.repeat(60));

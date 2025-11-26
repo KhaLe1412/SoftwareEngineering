@@ -1,11 +1,14 @@
 import express from 'express';
-import { getAllSessions, createSessionManagement, updateSessionById, markSessionAsCompleted, deleteSessionById } from '../components/session_managements.js';
+import { getSessionById, getAllSessions, createSessionManagement, updateSessionById, markSessionAsCompleted, deleteSessionById } from '../components/session_managements.js';
 import { joinSession, leaveSession, createRescheduleRequest, auto_matchTutor } from '../components/request_managements.js';
 import { submitSessionFeedback, submitSessionReview } from '../components/evaluation_managements.js';
 const router = express.Router();
 
 // GET /api/sessions
 router.get('/', getAllSessions);
+
+// GET /api/sessions/:id
+router.get('/:id', getSessionById);
 
 // POST /api/sessions
 router.post('/', createSessionManagement);

@@ -84,6 +84,31 @@ export const getAllSessions = (req: Request, res: Response) => {
   }
 };
 
+// GET /api/sessions/:id
+// Description: Lấy thông tin một session theo ID, kèm thông tin tutor và danh sách học sinh đã đăng ký
+// Params: id: string
+export const getSessionById = (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const session = mockSessions.find((s) => s.id === id);
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+    const students = mockStudents.filter((stu) =>
+      session.enrolledStudents.includes(stu.id)
+    );
+    const tutor = mockTutors.find((tut) => String(tut.id) === String(session.tutorId));
+
+    return res.status(200).json({
+      session,
+      students,
+      tutor: tutor || null,
+    });
+  } catch (error) {
+    console.error("getSessionById error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
 
 // Handler to create a session management
 // POST /api/sessions

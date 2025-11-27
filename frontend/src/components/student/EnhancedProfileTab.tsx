@@ -536,7 +536,7 @@
 //     </div>
 //   );
 // }
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -546,10 +546,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Textarea } from '../ui/textarea';
-import { Search, Calendar, Clock, MapPin, Lock, Star, Edit, Download, Loader2 } from 'lucide-react'; // Thêm Loader2
-import { Student } from '../../types';
+import { Search, Calendar, Clock, MapPin, Lock, Star, Edit, Download, Loader2 } from 'lucide-react';
+import { Student, Session, Tutor } from '../../types';
 import { mockSessions, mockTutors } from '../../lib/mock-data';
-import { toast } from 'sonner'; // Đã sửa lại import cho gọn nếu dùng phiên bản mới, hoặc giữ nguyên sonner@2.0.3
+import { toast } from 'sonner';
+
+// API_BASE_URL sẽ được dùng khi có database
+// const API_BASE_URL = 'http://localhost:5001/api';
 
 interface EnhancedProfileTabProps {
   student: Student;
@@ -588,6 +591,8 @@ const AVAILABLE_SUBJECTS = [
 export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [supportNeeds, setSupportNeeds] = useState(student.supportNeeds);
+  const [name, setName] = useState(student.name);
+  const [email, setEmail] = useState(student.email);
   const [showAddSubjectDialog, setShowAddSubjectDialog] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -615,12 +620,37 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
   // State to store session reviews
   const [sessionReviews, setSessionReviews] = useState<Record<string, SessionReview>>({});
   
-  const studentSessions = mockSessions.filter(s => s.enrolledStudents.includes(student.id));
-  const completedSessions = studentSessions.filter(s => s.status === 'completed');
+  // State for fetched data
+  const [completedSessions, setCompletedSessions] = useState<Session[]>([]);
+  const [tutors, setTutors] = useState<Tutor[]>([]);
+  
+  // Fetch data on component mount
+  useEffect(() => {
+    handleOverview();
+  }, [student.id]);
+  
+  // Fetch completed sessions and tutors from mock data
+  const handleOverview = async () => {
+    try {
+      // Lấy sessions từ mock data
+      const studentSessions = mockSessions.filter(s => 
+        s.enrolledStudents.includes(student.id) && s.status === 'completed'
+      );
+      setCompletedSessions(studentSessions);
+      
+      // Lấy unique tutors từ các sessions
+      const tutorIds = [...new Set(studentSessions.map(s => s.tutorId))];
+      const tutorsList = mockTutors.filter(t => tutorIds.includes(t.id));
+      setTutors(tutorsList);
+    } catch (error) {
+      console.error('Error fetching overview data:', error);
+      toast.error('Failed to load session history');
+    }
+  };
 
   // Filter completed sessions by search query
   const filteredSessions = completedSessions.filter(session => {
-    const tutor = mockTutors.find(t => t.id === session.tutorId);
+    const tutor = tutors.find(t => t.id === session.tutorId);
     const searchLower = searchQuery.toLowerCase();
     return (
       session.subject.toLowerCase().includes(searchLower) ||
@@ -629,9 +659,20 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
     );
   });
 
-  const handleSaveProfile = () => {
-    toast.success('Profile updated successfully!');
-    setIsEditing(false);
+  const handleSaveProfile = async () => {
+    try {
+      // Vì không có database, chỉ update local state
+      // Trong tương lai có thể gọi API: PATCH /api/students/:id
+      // const response = await fetch(`${API_BASE_URL}/students/${student.id}`, {...});
+      
+      // Update local state
+      // Note: Trong thực tế, data sẽ được lưu vào database qua API
+      toast.success('Profile updated successfully!');
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    }
   };
 
   const handleAddSubject = () => {
@@ -669,26 +710,12 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
     setIsLoading(true);
 
     try {
-        // 2. Gọi API Backend
-        // Lưu ý: Đảm bảo Port 5000 là port backend của bạn
-        const response = await fetch('http://localhost:5000/api/auth/change-password', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                // 'Authorization': `Bearer ${token}` // Nếu sau này bạn có token thì thêm vào đây
-            },
-            body: JSON.stringify({
-                userId: student.id, // Gửi ID để backend biết đổi cho ai
-                oldPassword: passwordData.currentPassword, // Backend đang đợi key là 'oldPassword'
-                newPassword: passwordData.newPassword
-            })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message || 'Change password failed');
-        }
+        // Vì không có database, chỉ simulate việc đổi mật khẩu
+        // Trong tương lai có thể gọi API: POST /api/auth/change-password
+        // const response = await fetch(`${API_BASE_URL}/auth/change-password`, {...});
+        
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         // 3. Thành công
         toast.success('Password changed successfully!');
@@ -708,7 +735,7 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
 
   const handleOpenReviewDialog = (sessionId: string) => {
     setCurrentReviewSessionId(sessionId);
-    const session = mockSessions.find(s => s.id === sessionId);
+    const session = completedSessions.find(s => s.id === sessionId);
     const existingReview = sessionReviews[sessionId] || session?.reviews?.find(r => r.studentId === student.id);
     if (existingReview) {
       setReviewData({
@@ -724,7 +751,7 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
     setReviewDialogOpen(true);
   };
 
-  const handleSaveReview = () => {
+  const handleSaveReview = async () => {
     if (!currentReviewSessionId) return;
 
     if (!reviewData.comment.trim()) {
@@ -732,18 +759,52 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
       return;
     }
 
-    setSessionReviews(prev => ({
-      ...prev,
-      [currentReviewSessionId]: {
-        sessionId: currentReviewSessionId,
-        rating: reviewData.rating,
-        comment: reviewData.comment
-      }
-    }));
+    try {
+      // Vì không có database, chỉ update local state và mock data
+      // Trong tương lai có thể gọi API: POST /api/sessions/:id/review
+      // const response = await fetch(`${API_BASE_URL}/sessions/${currentReviewSessionId}/review`, {...});
+      
+      // Update local state
+      setSessionReviews(prev => ({
+        ...prev,
+        [currentReviewSessionId]: {
+          sessionId: currentReviewSessionId,
+          rating: reviewData.rating,
+          comment: reviewData.comment
+        }
+      }));
 
-    toast.success('Session review saved successfully!');
-    setReviewDialogOpen(false);
-    setCurrentReviewSessionId(null);
+      // Update mock session data (simulate database update)
+      const sessionIndex = mockSessions.findIndex(s => s.id === currentReviewSessionId);
+      if (sessionIndex !== -1) {
+        const session = mockSessions[sessionIndex];
+        if (!session.reviews) {
+          session.reviews = [];
+        }
+        const existingReviewIndex = session.reviews.findIndex(r => r.studentId === student.id);
+        const reviewObj = {
+          studentId: student.id,
+          rating: reviewData.rating,
+          comment: reviewData.comment,
+          submittedAt: new Date().toISOString()
+        };
+        if (existingReviewIndex !== -1) {
+          session.reviews[existingReviewIndex] = reviewObj;
+        } else {
+          session.reviews.push(reviewObj);
+        }
+      }
+
+      // Refresh sessions
+      await handleOverview();
+
+      toast.success('Session review saved successfully!');
+      setReviewDialogOpen(false);
+      setCurrentReviewSessionId(null);
+    } catch (error) {
+      console.error('Error saving review:', error);
+      toast.error('Failed to save review');
+    }
   };
 
   const availableToAdd = AVAILABLE_SUBJECTS.filter(subject => !supportNeeds.includes(subject));
@@ -772,7 +833,8 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
             <div>
               <Label>Full Name</Label>
               <Input 
-                value={student.name} 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 disabled={!isEditing}
                 className="mt-2"
               />
@@ -788,7 +850,8 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
             <div>
               <Label>Email</Label>
               <Input 
-                value={student.email} 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 disabled={!isEditing}
                 className="mt-2"
               />
@@ -925,7 +988,7 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
           ) : (
             <div className="space-y-3">
               {filteredSessions.map(session => {
-                const tutor = mockTutors.find(t => t.id === session.tutorId);
+                const tutor = tutors.find(t => t.id === session.tutorId);
                 const review = sessionReviews[session.id] || session.reviews?.find(r => r.studentId === student.id);
                 
                 return (
@@ -1078,7 +1141,7 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
               <Label>Rating (1-5)</Label>
               <div className="flex items-center gap-2 mt-2">
                 {[1, 2, 3, 4, 5].map(rating => (
-                  <button
+                  <Button
                     key={rating}
                     onClick={() => setReviewData({...reviewData, rating})}
                     className="focus:outline-none"
@@ -1090,7 +1153,7 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
                           : 'text-gray-300'
                       }`}
                     />
-                  </button>
+                  </Button>
                 ))}
                 <span className="ml-2 text-sm text-gray-600">{reviewData.rating}/5</span>
               </div>

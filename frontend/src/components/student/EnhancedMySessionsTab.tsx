@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -10,7 +10,7 @@ import { Input } from '../ui/input';
 import { Calendar, Clock, MapPin, Video, X, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import { mockSessions, mockTutors } from '../../lib/mock-data';
 import { Student, Session } from '../../types';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface EnhancedMySessionsTabProps {
   student: Student;

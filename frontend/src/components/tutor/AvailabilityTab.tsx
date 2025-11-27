@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -43,7 +43,7 @@ import {
 } from "lucide-react";
 import { Tutor, Session, Student } from "../../types";
 //import { mockSessions, mockStudents } from '../../lib/mock-data';
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 
 interface AvailabilityTabProps {
   tutor: Tutor;
@@ -114,11 +114,11 @@ export function AvailabilityTab({ tutor }: AvailabilityTabProps) {
     }
   };
 
-  useState(() => {
+  useEffect(() => {
     if (tutor?.id) {
       fetchSessions();
     }
-  }, [tutor?.id]);
+  }, [fetchSessions]);
 
   const tutorSessions = sessionInfo.map((info) => info.session);
   const selectedSession = tutorSessions.find((s) => s.id === selectedSessionId);
@@ -357,7 +357,7 @@ export function AvailabilityTab({ tutor }: AvailabilityTabProps) {
       return;
     }
 
-    const enrolledCount = selectedSession.enrolledStudents.length;
+    const enrolledCount = selectedSession?.enrolledStudents?.length || 0;
     toast.success(
       `Session rescheduled to ${rescheduleData.date} at ${rescheduleData.startTime}. Notification sent to ${enrolledCount} enrolled student(s) via Messages.`
     );

@@ -167,7 +167,7 @@ export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
         </Button>
       </SheetTrigger>
       
-      <SheetContent className="w-full sm:max-w-2xl flex flex-col h-full">
+      <SheetContent className="w-full sm:max-w-2xl flex flex-col h-[100vh] p-0 gap-0 overflow-hidden">
         <SheetHeader className="flex-shrink-0">
           <SheetTitle>Messages & Notifications</SheetTitle>
           <SheetDescription>
@@ -175,7 +175,7 @@ export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
           </SheetDescription>
         </SheetHeader>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 mt-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
           <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
             <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="notifications">
@@ -188,7 +188,7 @@ export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="messages" className="flex-1 flex flex-col min-h-0 mt-4">
+          <TabsContent value="messages" className="flex-1 flex flex-col min-h-0 px-6 pb-6 data-[state=active]:flex overflow-hidden">
             <div className="flex h-full gap-4">
               
               {/* Left column: Conversation list */}
@@ -273,7 +273,7 @@ export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
               </div>
 
               {/* Right column: Chat window */}
-              <div className="flex-1 flex flex-col h-full overflow-hidden">
+              <div className="flex-1 flex flex-col min-w-0 bg-white h-full overflow-hidden">
                 {selectedConversation ? (
                   <>
                     {/* Header */}
@@ -289,7 +289,8 @@ export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
                     </div>
 
                     {/* Messages Area - Simple overflow scroll */}
-                    <div className="flex-1 overflow-y-auto py-4 pr-4" style={{ maxHeight: '100%' }}>
+                    
+                    <ScrollArea className="flex-1 h-full p-4">
                       <div className="space-y-4 pb-2">
                         {messages.length === 0 ? (
                           <p className="text-center text-gray-400 text-sm mt-10">No messages yet. Say hello!</p>
@@ -321,10 +322,11 @@ export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
                         )}
                         <div ref={scrollRef} />
                       </div>
-                    </div>
+                    </ScrollArea>
+        
 
                     {/* Input Area - Locked at bottom */}
-                    <div className="pt-4 border-t flex gap-2 flex-shrink-0 bg-white">
+                    <div className="p-3 border-t bg-white flex-shrink-0">
                       <Input
                         placeholder="Type a message..."
                         value={messageText}
@@ -346,7 +348,7 @@ export function MessagingPanel({ userId, userRole }: MessagingPanelProps) {
             </div>
           </TabsContent>
 
-          <TabsContent value="notifications" className="flex-1 flex flex-col min-h-0 mt-4">
+          <TabsContent value="notifications" className="flex-1 flex flex-col min-h-0 px-6 pb-6 data-[state=active]:flex overflow-hidden">
             <ScrollArea className="flex-1 h-full">
               <div className="space-y-3 pr-4">
                 {notifications.length === 0 ? (

@@ -8,15 +8,15 @@ import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Calendar, Clock, MapPin, Video, X, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
-import { mockSessions, mockTutors } from '../../lib/mock-data';
-import { Student, Session } from '../../types';
+//import { mockSessions, mockTutors } from '../../lib/mock-data';
+import { Student, Tutor, Session } from '../../types';
 import { toast } from 'sonner@2.0.3';
 
 interface EnhancedMySessionsTabProps {
   student: Student;
 }
 
-export function EnhancedMySessionsTab({ student }: EnhancedMySessionsTabProps) {
+export function EnhancedMySessionsTab({ student}: EnhancedMySessionsTabProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
@@ -27,6 +27,7 @@ export function EnhancedMySessionsTab({ student }: EnhancedMySessionsTabProps) {
     newEndTime: '',
     reason: ''
   });
+
 
   const [studentSessions, setStudentSessions] = useState<Session[]>([]);
   const [tutors, setTutors] = useState([]);
@@ -65,7 +66,17 @@ export function EnhancedMySessionsTab({ student }: EnhancedMySessionsTabProps) {
   };
 
   const getSessionsForDate = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
+    // Cách cũ gây lỗi lệch múi giờ:
+    // const dateString = date.toISOString().split('T')[0];
+
+    // Cách mới: Tự tạo chuỗi YYYY-MM-DD theo giờ địa phương
+    const year = date.getFullYear();
+    // getMonth() trả về 0-11 nên cần +1, padStart để thêm số 0 đằng trước nếu cần
+    const month = String(date.getMonth() + 1).padStart(2, '0'); 
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    const dateString = `${year}-${month}-${day}`;
+    
     return studentSessions.filter(s => s.date === dateString);
   };
 
@@ -266,12 +277,12 @@ export function EnhancedMySessionsTab({ student }: EnhancedMySessionsTabProps) {
                 <p className="text-sm text-gray-600">Tutor</p>
                 <div className="flex items-center gap-2 mt-1">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={mockTutors.find(t => t.id === selectedSession.tutorId)?.avatar} />
+                    <AvatarImage src={tutors.find(t => t.id === selectedSession.tutorId)?.avatar} />
                     <AvatarFallback>
-                      {mockTutors.find(t => t.id === selectedSession.tutorId)?.name.charAt(0)}
+                      {tutors.find(t => t.id === selectedSession.tutorId)?.name.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
-                  <span>{mockTutors.find(t => t.id === selectedSession.tutorId)?.name}</span>
+                  <span>{tutors.find(t => t.id === selectedSession.tutorId)?.name}</span>
                 </div>
               </div>
 

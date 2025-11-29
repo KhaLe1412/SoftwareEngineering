@@ -196,7 +196,9 @@ export function StudentDashboard({ student }: StudentDashboardProps) {
           </TabsContent>
 
           <TabsContent value="sessions">
-            <EnhancedMySessionsTab student={student} />
+            <EnhancedMySessionsTab 
+              student={student}
+            />
           </TabsContent>
 
           <TabsContent value="library">

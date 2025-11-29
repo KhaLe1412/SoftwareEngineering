@@ -8,7 +8,7 @@ import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Calendar, Clock, MapPin, Video, X, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
-//import { mockSessions, mockTutors } from '../../lib/mock-data';
+import { mockSessions, mockTutors } from '../../lib/mock-data';
 import { Student, Tutor, Session } from '../../types';
 import { toast } from 'sonner@2.0.3';
 

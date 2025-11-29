@@ -916,6 +916,519 @@ export const mockSessions: Session[] = [
       }
     ]
   },
+  // Additional completed sessions for comprehensive profile testing
+  {
+    id: 'ses34',
+    tutorId: 't1',
+    subject: 'Data Structures',
+    date: '2025-09-15',
+    startTime: '14:00',
+    endTime: '15:30',
+    type: 'online',
+    status: 'completed',
+    meetingLink: 'https://meet.google.com/ds-bst',
+    summary: 'Binary Search Trees and AVL Trees. Covered insertion, deletion, and rotation operations.',
+    recordingUrl: 'https://example.com/recordings/session-ses34.mp4',
+    feedback: {
+      id: 'fb7',
+      sessionId: 'ses34',
+      studentRating: 5,
+      studentComment: 'Great explanation of tree rotations!',
+      tutorProgress: 'Excellent understanding of tree structures',
+      tutorNotes: 'Ready for more advanced tree algorithms',
+      submittedAt: '2025-09-15T16:00:00Z'
+    },
+    maxStudents: 12,
+    enrolledStudents: ['s1', 's3'],
+    reviews: [
+      {
+        studentId: 's1',
+        rating: 5,
+        comment: 'Great explanation of tree rotations!',
+        submittedAt: '2025-09-15T16:00:00Z'
+      },
+      {
+        studentId: 's3',
+        rating: 4,
+        comment: 'Good session, need more practice on AVL trees.',
+        submittedAt: '2025-09-15T16:15:00Z'
+      }
+    ]
+  },
+  {
+    id: 'ses35',
+    tutorId: 't2',
+    subject: 'Digital Electronics',
+    date: '2025-09-20',
+    startTime: '09:00',
+    endTime: '10:30',
+    type: 'in-person',
+    status: 'completed',
+    location: 'Building H2, Lab 205',
+    summary: 'Flip-flops and sequential circuits. Covered D, JK, and T flip-flops with practical examples.',
+    recordingUrl: 'https://example.com/recordings/session-ses35.mp4',
+    feedback: {
+      id: 'fb8',
+      sessionId: 'ses35',
+      studentRating: 4,
+      studentComment: 'Clear explanations, but need more examples.',
+      tutorProgress: 'Good progress on sequential logic',
+      tutorNotes: 'Provide additional practice problems',
+      submittedAt: '2025-09-20T11:00:00Z'
+    },
+    maxStudents: 10,
+    enrolledStudents: ['s2', 's5'],
+    reviews: [
+      {
+        studentId: 's2',
+        rating: 4,
+        comment: 'Clear explanations, but need more examples.',
+        submittedAt: '2025-09-20T11:00:00Z'
+      },
+      {
+        studentId: 's5',
+        rating: 5,
+        comment: 'Very helpful! Understood flip-flops much better now.',
+        submittedAt: '2025-09-20T11:10:00Z'
+      }
+    ]
+  },
+  {
+    id: 'ses36',
+    tutorId: 't3',
+    subject: 'Linear Algebra',
+    date: '2025-09-25',
+    startTime: '10:00',
+    endTime: '11:30',
+    type: 'online',
+    status: 'completed',
+    meetingLink: 'https://meet.google.com/linalg-systems',
+    summary: 'Systems of linear equations and Gaussian elimination. Matrix row operations and reduced row echelon form.',
+    recordingUrl: 'https://example.com/recordings/session-ses36.mp4',
+    feedback: {
+      id: 'fb9',
+      sessionId: 'ses36',
+      studentRating: 5,
+      studentComment: 'Perfect explanation of Gaussian elimination!',
+      tutorProgress: 'Strong grasp of matrix operations',
+      tutorNotes: 'Ready for matrix inverses and determinants',
+      submittedAt: '2025-09-25T12:00:00Z'
+    },
+    maxStudents: 15,
+    enrolledStudents: ['s4', 's8'],
+    reviews: [
+      {
+        studentId: 's4',
+        rating: 5,
+        comment: 'Perfect explanation of Gaussian elimination!',
+        submittedAt: '2025-09-25T12:00:00Z'
+      },
+      {
+        studentId: 's8',
+        rating: 5,
+        comment: 'Excellent session! Everything is clear now.',
+        submittedAt: '2025-09-25T12:05:00Z'
+      }
+    ]
+  },
+  {
+    id: 'ses37',
+    tutorId: 't4',
+    subject: 'Web Development',
+    date: '2025-09-28',
+    startTime: '14:00',
+    endTime: '16:00',
+    type: 'online',
+    status: 'completed',
+    meetingLink: 'https://meet.google.com/web-react',
+    summary: 'React hooks and state management. Built a todo app using useState and useEffect hooks.',
+    recordingUrl: 'https://example.com/recordings/session-ses37.mp4',
+    feedback: {
+      id: 'fb10',
+      sessionId: 'ses37',
+      studentRating: 5,
+      studentComment: 'Amazing hands-on session! The todo app example was perfect.',
+      tutorProgress: 'Excellent progress with React concepts',
+      tutorNotes: 'Continue building more complex projects',
+      submittedAt: '2025-09-28T17:00:00Z'
+    },
+    maxStudents: 12,
+    enrolledStudents: ['s3', 's6'],
+    reviews: [
+      {
+        studentId: 's3',
+        rating: 5,
+        comment: 'Amazing hands-on session! The todo app example was perfect.',
+        submittedAt: '2025-09-28T17:00:00Z'
+      },
+      {
+        studentId: 's6',
+        rating: 4,
+        comment: 'Good session, but would like more advanced examples.',
+        submittedAt: '2025-09-28T17:15:00Z'
+      }
+    ]
+  },
+  {
+    id: 'ses38',
+    tutorId: 't5',
+    subject: 'Statistics',
+    date: '2025-10-05',
+    startTime: '10:00',
+    endTime: '11:30',
+    type: 'online',
+    status: 'completed',
+    meetingLink: 'https://meet.google.com/stats-dist',
+    summary: 'Probability distributions: Normal, Binomial, and Poisson. Solved various problems using distribution tables.',
+    recordingUrl: 'https://example.com/recordings/session-ses38.mp4',
+    feedback: {
+      id: 'fb11',
+      sessionId: 'ses38',
+      studentRating: 4,
+      studentComment: 'Good session, need more practice problems.',
+      tutorProgress: 'Understanding distributions well',
+      tutorNotes: 'Provide more real-world examples',
+      submittedAt: '2025-10-05T12:00:00Z'
+    },
+    maxStudents: 10,
+    enrolledStudents: ['s4', 's8'],
+    reviews: [
+      {
+        studentId: 's4',
+        rating: 4,
+        comment: 'Good session, need more practice problems.',
+        submittedAt: '2025-10-05T12:00:00Z'
+      },
+      {
+        studentId: 's8',
+        rating: 5,
+        comment: 'Very clear explanations of probability distributions!',
+        submittedAt: '2025-10-05T12:10:00Z'
+      }
+    ]
+  },
+  {
+    id: 'ses39',
+    tutorId: 't6',
+    subject: 'Control Systems',
+    date: '2025-10-10',
+    startTime: '13:00',
+    endTime: '14:30',
+    type: 'in-person',
+    status: 'completed',
+    location: 'Building H2, Lab 301',
+    summary: 'PID controllers and system stability. Analyzed root locus plots and Bode diagrams.',
+    recordingUrl: 'https://example.com/recordings/session-ses39.mp4',
+    feedback: {
+      id: 'fb12',
+      sessionId: 'ses39',
+      studentRating: 5,
+      studentComment: 'Excellent explanation of PID tuning!',
+      tutorProgress: 'Strong understanding of control theory',
+      tutorNotes: 'Ready for advanced control design',
+      submittedAt: '2025-10-10T15:00:00Z'
+    },
+    maxStudents: 8,
+    enrolledStudents: ['s2', 's5', 's10'],
+    reviews: [
+      {
+        studentId: 's2',
+        rating: 5,
+        comment: 'Excellent explanation of PID tuning!',
+        submittedAt: '2025-10-10T15:00:00Z'
+      },
+      {
+        studentId: 's5',
+        rating: 4,
+        comment: 'Good session, but need more examples.',
+        submittedAt: '2025-10-10T15:10:00Z'
+      },
+      {
+        studentId: 's10',
+        rating: 5,
+        comment: 'Very helpful! Understood control systems much better.',
+        submittedAt: '2025-10-10T15:15:00Z'
+      }
+    ]
+  },
+  {
+    id: 'ses40',
+    tutorId: 't7',
+    subject: 'Physics',
+    date: '2025-10-12',
+    startTime: '14:00',
+    endTime: '15:30',
+    type: 'in-person',
+    status: 'completed',
+    location: 'Building H1, Room 301',
+    summary: 'Mechanics: Newton\'s laws and conservation of energy. Solved problems involving friction and momentum.',
+    recordingUrl: 'https://example.com/recordings/session-ses40.mp4',
+    feedback: {
+      id: 'fb13',
+      sessionId: 'ses40',
+      studentRating: 4,
+      studentComment: 'Good explanations, but need more practice.',
+      tutorProgress: 'Making good progress',
+      tutorNotes: 'Focus on problem-solving strategies',
+      submittedAt: '2025-10-12T16:00:00Z'
+    },
+    maxStudents: 10,
+    enrolledStudents: ['s7'],
+    reviews: [
+      {
+        studentId: 's7',
+        rating: 4,
+        comment: 'Good explanations, but need more practice.',
+        submittedAt: '2025-10-12T16:00:00Z'
+      }
+    ]
+  },
+  {
+    id: 'ses41',
+    tutorId: 't1',
+    subject: 'Algorithms',
+    date: '2025-10-18',
+    startTime: '14:00',
+    endTime: '15:30',
+    type: 'online',
+    status: 'completed',
+    meetingLink: 'https://meet.google.com/algo-graph',
+    summary: 'Graph algorithms: BFS, DFS, Dijkstra\'s algorithm. Implemented shortest path finding.',
+    recordingUrl: 'https://example.com/recordings/session-ses41.mp4',
+    feedback: {
+      id: 'fb14',
+      sessionId: 'ses41',
+      studentRating: 5,
+      studentComment: 'Great session! Graph algorithms are much clearer now.',
+      tutorProgress: 'Excellent understanding of graph traversal',
+      tutorNotes: 'Ready for more complex graph problems',
+      submittedAt: '2025-10-18T16:00:00Z'
+    },
+    maxStudents: 12,
+    enrolledStudents: ['s1', 's3', 's6'],
+    reviews: [
+      {
+        studentId: 's1',
+        rating: 5,
+        comment: 'Great session! Graph algorithms are much clearer now.',
+        submittedAt: '2025-10-18T16:00:00Z'
+      },
+      {
+        studentId: 's3',
+        rating: 5,
+        comment: 'Perfect explanation of Dijkstra\'s algorithm!',
+        submittedAt: '2025-10-18T16:10:00Z'
+      },
+      {
+        studentId: 's6',
+        rating: 4,
+        comment: 'Good session, need more practice problems.',
+        submittedAt: '2025-10-18T16:15:00Z'
+      }
+    ]
+  },
+  {
+    id: 'ses42',
+    tutorId: 't7',
+    subject: 'Calculus',
+    date: '2025-10-15',
+    startTime: '14:00',
+    endTime: '15:30',
+    type: 'in-person',
+    status: 'completed',
+    location: 'Building H1, Room 302',
+    summary: 'Derivatives and applications. Covered chain rule, product rule, and optimization problems.',
+    recordingUrl: 'https://example.com/recordings/session-ses42.mp4',
+    feedback: {
+      id: 'fb15',
+      sessionId: 'ses42',
+      studentRating: 5,
+      studentComment: 'Excellent session! Derivatives make much more sense now.',
+      tutorProgress: 'Strong understanding of calculus fundamentals',
+      tutorNotes: 'Continue with integration next',
+      submittedAt: '2025-10-15T16:00:00Z'
+    },
+    maxStudents: 10,
+    enrolledStudents: ['s7', 's9'],
+    reviews: [
+      {
+        studentId: 's7',
+        rating: 5,
+        comment: 'Excellent session! Derivatives make much more sense now.',
+        submittedAt: '2025-10-15T16:00:00Z'
+      },
+      {
+        studentId: 's9',
+        rating: 4,
+        comment: 'Good explanations, but need more practice problems.',
+        submittedAt: '2025-10-15T16:10:00Z'
+      }
+    ]
+  },
+  {
+    id: 'ses43',
+    tutorId: 't3',
+    subject: 'Discrete Mathematics',
+    date: '2025-10-22',
+    startTime: '10:00',
+    endTime: '11:30',
+    type: 'online',
+    status: 'completed',
+    meetingLink: 'https://meet.google.com/discrete-proofs',
+    summary: 'Mathematical proofs: direct proof, proof by contradiction, and mathematical induction.',
+    recordingUrl: 'https://example.com/recordings/session-ses43.mp4',
+    feedback: {
+      id: 'fb16',
+      sessionId: 'ses43',
+      studentRating: 5,
+      studentComment: 'Great explanation of proof techniques!',
+      tutorProgress: 'Excellent progress with mathematical reasoning',
+      tutorNotes: 'Ready for more advanced proof methods',
+      submittedAt: '2025-10-22T12:00:00Z'
+    },
+    maxStudents: 12,
+    enrolledStudents: ['s6', 's8', 's9'],
+    reviews: [
+      {
+        studentId: 's6',
+        rating: 5,
+        comment: 'Great explanation of proof techniques!',
+        submittedAt: '2025-10-22T12:00:00Z'
+      },
+      {
+        studentId: 's8',
+        rating: 5,
+        comment: 'Very helpful! Mathematical induction is clearer now.',
+        submittedAt: '2025-10-22T12:05:00Z'
+      },
+      {
+        studentId: 's9',
+        rating: 4,
+        comment: 'Good session, need more practice on proofs.',
+        submittedAt: '2025-10-22T12:10:00Z'
+      }
+    ]
+  },
+  {
+    id: 'ses44',
+    tutorId: 't5',
+    subject: 'Probability and Statistics',
+    date: '2025-10-25',
+    startTime: '10:00',
+    endTime: '11:30',
+    type: 'online',
+    status: 'completed',
+    meetingLink: 'https://meet.google.com/stats-regression',
+    summary: 'Linear regression and correlation analysis. Covered least squares method and R-squared values.',
+    recordingUrl: 'https://example.com/recordings/session-ses44.mp4',
+    feedback: {
+      id: 'fb17',
+      sessionId: 'ses44',
+      studentRating: 4,
+      studentComment: 'Good session, but need more examples.',
+      tutorProgress: 'Understanding regression concepts well',
+      tutorNotes: 'Provide more real-world datasets',
+      submittedAt: '2025-10-25T12:00:00Z'
+    },
+    maxStudents: 10,
+    enrolledStudents: ['s4', 's8', 's9'],
+    reviews: [
+      {
+        studentId: 's4',
+        rating: 4,
+        comment: 'Good session, but need more examples.',
+        submittedAt: '2025-10-25T12:00:00Z'
+      },
+      {
+        studentId: 's8',
+        rating: 5,
+        comment: 'Excellent explanation of regression analysis!',
+        submittedAt: '2025-10-25T12:05:00Z'
+      },
+      {
+        studentId: 's9',
+        rating: 4,
+        comment: 'Helpful session, need more practice problems.',
+        submittedAt: '2025-10-25T12:10:00Z'
+      }
+    ]
+  },
+  {
+    id: 'ses45',
+    tutorId: 't6',
+    subject: 'Control Systems',
+    date: '2025-09-18',
+    startTime: '13:00',
+    endTime: '14:30',
+    type: 'in-person',
+    status: 'completed',
+    location: 'Building H2, Lab 302',
+    summary: 'Introduction to control systems. Covered open-loop and closed-loop systems, transfer functions.',
+    recordingUrl: 'https://example.com/recordings/session-ses45.mp4',
+    feedback: {
+      id: 'fb18',
+      sessionId: 'ses45',
+      studentRating: 5,
+      studentComment: 'Great introduction to control systems!',
+      tutorProgress: 'Good understanding of basic concepts',
+      tutorNotes: 'Continue with system analysis',
+      submittedAt: '2025-09-18T15:00:00Z'
+    },
+    maxStudents: 10,
+    enrolledStudents: ['s2', 's5', 's10'],
+    reviews: [
+      {
+        studentId: 's2',
+        rating: 5,
+        comment: 'Great introduction to control systems!',
+        submittedAt: '2025-09-18T15:00:00Z'
+      },
+      {
+        studentId: 's5',
+        rating: 4,
+        comment: 'Good session, need more examples.',
+        submittedAt: '2025-09-18T15:10:00Z'
+      },
+      {
+        studentId: 's10',
+        rating: 5,
+        comment: 'Excellent explanations!',
+        submittedAt: '2025-09-18T15:15:00Z'
+      }
+    ]
+  },
+  {
+    id: 'ses46',
+    tutorId: 't6',
+    subject: 'Microprocessors',
+    date: '2025-10-08',
+    startTime: '13:00',
+    endTime: '14:30',
+    type: 'in-person',
+    status: 'completed',
+    location: 'Building H2, Lab 304',
+    summary: 'ARM architecture and instruction set. Covered assembly programming basics and register operations.',
+    recordingUrl: 'https://example.com/recordings/session-ses46.mp4',
+    feedback: {
+      id: 'fb19',
+      sessionId: 'ses46',
+      studentRating: 4,
+      studentComment: 'Good session, but need more hands-on practice.',
+      tutorProgress: 'Understanding ARM architecture well',
+      tutorNotes: 'Provide more programming exercises',
+      submittedAt: '2025-10-08T15:00:00Z'
+    },
+    maxStudents: 8,
+    enrolledStudents: ['s10'],
+    reviews: [
+      {
+        studentId: 's10',
+        rating: 4,
+        comment: 'Good session, but need more hands-on practice.',
+        submittedAt: '2025-10-08T15:00:00Z'
+      }
+    ]
+  },
   {
     id: 'open1',
     tutorId: 't1',

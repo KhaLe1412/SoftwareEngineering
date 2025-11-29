@@ -39,7 +39,7 @@ export function StudentDashboard({ student }: StudentDashboardProps) {
 
   useEffect(() => {
     fetchSessions();
-  }, []);
+  }, [student.id]);
 
   const upcomingSessions = mockSessions.filter(
     s => s.enrolledStudents.includes(student.id) && s.status === 'open'

@@ -59,6 +59,12 @@ export function JoinTab({ student, sessions, onJoinSuccess }: JoinTabProps) {
   const filteredEnrolledSessions = filterSessions(enrolledSessions);
   const filteredAvailableSessions = filterSessions(availableSessions);
 
+  useState(() => {
+    if (student.id) {
+      onJoinSuccess();
+    } 
+  },[student.id]);
+
   const handleJoinSession = async (session: Session) => {
     try {
       const currentEnrolled = session.enrolledStudents || [];

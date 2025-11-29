@@ -11,17 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from '../ui/textarea';
 import { Search, Calendar, Clock, MapPin, Video, Lock, Edit, Star, FileText } from 'lucide-react';
 import { Tutor, Session, Student } from '../../types';
-import { mockSessions, mockStudents } from '../../lib/mock-data';
 import { toast } from 'sonner';
 
-// API_BASE_URL sẽ được dùng khi có database
-// const API_BASE_URL = 'http://localhost:5001/api';
+const API_BASE_URL = 'http://localhost:5001/api';
 
 interface EnhancedTutorProfileTabProps {
   tutor: Tutor;
 }
 
-// Danh sách các môn học có sẵn
 const AVAILABLE_SUBJECTS = [
   'Data Structures',
   'Algorithms',
@@ -88,16 +85,28 @@ export function EnhancedTutorProfileTab({ tutor }: EnhancedTutorProfileTabProps)
     handleProfile();
   }, [tutor.id]);
   
-  // Fetch completed sessions and students from mock data
+  // Fetch completed sessions and students from API (backend returns mock data)
   const handleProfile = async () => {
     try {
-      // Lấy sessions từ mock data
-      const tutorSessions = mockSessions.filter(s => 
-        s.tutorId === tutor.id && s.status === 'completed'
+      // Fetch từ API endpoint
+      const response = await fetch(
+        `${API_BASE_URL}/sessions?tutorId=${tutor.id}&status=completed`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
       );
-      
-      // Sort by date descending (most recent first)
-      const sortedSessions = tutorSessions.sort((a, b) => {
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      const sessions = data.map((item: any) => item.session);
+      const sortedSessions = sessions.sort((a: Session, b: Session) => {
         const dateCompare = new Date(b.date).getTime() - new Date(a.date).getTime();
         if (dateCompare !== 0) return dateCompare;
         return b.startTime.localeCompare(a.startTime);
@@ -105,21 +114,23 @@ export function EnhancedTutorProfileTab({ tutor }: EnhancedTutorProfileTabProps)
       
       setCompletedSessions(sortedSessions);
       
-      // Lấy unique students từ các sessions
-      const studentIds = new Set<string>();
-      sortedSessions.forEach(session => {
-        session.enrolledStudents.forEach(id => studentIds.add(id));
+      // Extract unique students from all sessions
+      const allStudents = new Map<string, Student>();
+      data.forEach((item: any) => {
+        item.students.forEach((student: Student) => {
+          if (!allStudents.has(student.id)) {
+            allStudents.set(student.id, student);
+          }
+        });
       });
       
-      const studentsList = mockStudents.filter(s => studentIds.has(s.id));
-      setStudents(studentsList);
+      setStudents(Array.from(allStudents.values()));
     } catch (error) {
       console.error('Error fetching profile data:', error);
       toast.error('Failed to load session history');
     }
   };
 
-  // Filter completed sessions by search query
   const filteredSessions = completedSessions.filter(session => {
     const enrolledStudents = students.filter(s => session.enrolledStudents.includes(s.id));
     const searchLower = searchQuery.toLowerCase();
@@ -133,12 +144,6 @@ export function EnhancedTutorProfileTab({ tutor }: EnhancedTutorProfileTabProps)
 
   const handleSaveProfile = async () => {
     try {
-      // Vì không có database, chỉ update local state
-      // Trong tương lai có thể gọi API: PATCH /api/tutors/:id
-      // const response = await fetch(`${API_BASE_URL}/tutors/${tutor.id}`, {...});
-      
-      // Update local state
-      // Note: Trong thực tế, data sẽ được lưu vào database qua API
       toast.success('Profile updated successfully!');
       setIsEditing(false);
     } catch (error) {
@@ -248,27 +253,15 @@ export function EnhancedTutorProfileTab({ tutor }: EnhancedTutorProfileTabProps)
         }
       }));
 
-      // Update mock session data (simulate database update)
-      const sessionIndex = mockSessions.findIndex(s => s.id === currentReviewSessionId);
-      if (sessionIndex !== -1) {
-        const session = mockSessions[sessionIndex];
-        session.recordingUrl = reviewData.recordingUrl || session.recordingUrl;
-        if (!session.feedback) {
-          session.feedback = {
-            id: `fb-${Date.now()}`,
-            sessionId: currentReviewSessionId,
-            tutorProgress: reviewData.summary,
-            tutorNotes: reviewData.summary,
-            submittedAt: new Date().toISOString()
-          };
-        } else {
-          session.feedback.tutorProgress = reviewData.summary;
-          session.feedback.tutorNotes = reviewData.summary;
-          session.feedback.submittedAt = new Date().toISOString();
-        }
-      }
+      // Update session via API (backend will update mock data)
+      // In the future, can call: POST /api/sessions/:id/feedback
+      // const response = await fetch(`${API_BASE_URL}/sessions/${currentReviewSessionId}/feedback`, {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(reviewData)
+      // });
 
-      // Refresh sessions
+      // Refresh sessions from API
       await handleProfile();
 
       toast.success('Session feedback saved successfully!');
@@ -434,7 +427,7 @@ export function EnhancedTutorProfileTab({ tutor }: EnhancedTutorProfileTabProps)
             </div>
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <div className="text-2xl mb-1">
-                {new Set(mockSessions.map(s => s.enrolledStudents)).size}
+                {students.length}
               </div>
               <p className="text-sm text-gray-600">Students Helped</p>
             </div>

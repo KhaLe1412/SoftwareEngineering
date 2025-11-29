@@ -13,7 +13,7 @@ import { Slider } from '../ui/slider';
 import { TrendingUp, TrendingDown, Minus, Calendar, PlusCircle, FileText } from 'lucide-react';
 import { mockSessions, mockStudents, mockStudentEvaluations } from '../../lib/mock-data';
 import { Tutor, Student } from '../../types';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface StudentProgressTabProps {
   tutor: Tutor;

@@ -548,11 +548,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from '../ui/textarea';
 import { Search, Calendar, Clock, MapPin, Lock, Star, Edit, Download, Loader2 } from 'lucide-react';
 import { Student, Session, Tutor } from '../../types';
-import { mockSessions, mockTutors } from '../../lib/mock-data';
 import { toast } from 'sonner';
 
-// API_BASE_URL sẽ được dùng khi có database
-// const API_BASE_URL = 'http://localhost:5001/api';
+const API_BASE_URL = 'http://localhost:5001/api';
 
 interface EnhancedProfileTabProps {
   student: Student;
@@ -629,22 +627,46 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
     handleOverview();
   }, [student.id]);
   
-  // Fetch completed sessions and tutors from mock data
+  // Fetch completed sessions and tutors from API (backend returns mock data)
   const handleOverview = async () => {
     try {
-      // Lấy sessions từ mock data
-      const studentSessions = mockSessions.filter(s => 
-        s.enrolledStudents.includes(student.id) && s.status === 'completed'
+      setIsLoading(true);
+      // Fetch từ API endpoint
+      const response = await fetch(
+        `${API_BASE_URL}/sessions?studentId=${student.id}&status=completed`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
       );
-      setCompletedSessions(studentSessions);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      // Response format: [{session: Session, students: Student[], tutor: Tutor}]
       
-      // Lấy unique tutors từ các sessions
-      const tutorIds = [...new Set(studentSessions.map(s => s.tutorId))];
-      const tutorsList = mockTutors.filter(t => tutorIds.includes(t.id));
-      setTutors(tutorsList);
+      // Extract sessions
+      const sessions = data.map((item: any) => item.session);
+      setCompletedSessions(sessions);
+      
+      // Extract unique tutors from all sessions
+      const allTutors = new Map<string, Tutor>();
+      data.forEach((item: any) => {
+        if (item.tutor && !allTutors.has(item.tutor.id)) {
+          allTutors.set(item.tutor.id, item.tutor);
+        }
+      });
+      
+      setTutors(Array.from(allTutors.values()));
     } catch (error) {
       console.error('Error fetching overview data:', error);
       toast.error('Failed to load session history');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -774,28 +796,19 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
         }
       }));
 
-      // Update mock session data (simulate database update)
-      const sessionIndex = mockSessions.findIndex(s => s.id === currentReviewSessionId);
-      if (sessionIndex !== -1) {
-        const session = mockSessions[sessionIndex];
-        if (!session.reviews) {
-          session.reviews = [];
-        }
-        const existingReviewIndex = session.reviews.findIndex(r => r.studentId === student.id);
-        const reviewObj = {
-          studentId: student.id,
-          rating: reviewData.rating,
-          comment: reviewData.comment,
-          submittedAt: new Date().toISOString()
-        };
-        if (existingReviewIndex !== -1) {
-          session.reviews[existingReviewIndex] = reviewObj;
-        } else {
-          session.reviews.push(reviewObj);
-        }
-      }
+      // Update session review via API (backend will update mock data)
+      // In the future, can call: POST /api/sessions/:id/review
+      // const response = await fetch(`${API_BASE_URL}/sessions/${currentReviewSessionId}/review`, {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     studentId: student.id,
+      //     rating: reviewData.rating,
+      //     comment: reviewData.comment
+      //   })
+      // });
 
-      // Refresh sessions
+      // Refresh sessions from API
       await handleOverview();
 
       toast.success('Session review saved successfully!');

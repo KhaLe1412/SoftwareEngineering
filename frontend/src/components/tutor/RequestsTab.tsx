@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Calendar, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { Tutor } from '../../types';
 import { mockStudents, mockSessions, mockRescheduleRequests } from '../../lib/mock-data';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface RequestsTabProps {
   tutor: Tutor;

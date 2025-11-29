@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -28,11 +28,28 @@ export function EnhancedMySessionsTab({ student }: EnhancedMySessionsTabProps) {
     reason: ''
   });
 
-  // Get sessions for student (both individual and enrolled open sessions)
-  const studentSessions = mockSessions.filter(s => {
-    return (s.status === 'open' && s.enrolledStudents.includes(student.id));
-  });
+  const [studentSessions, setStudentSessions] = useState<Session[]>([]);
+  const [tutors, setTutors] = useState([]);
 
+  const handleFetchData = () => {
+    try {
+      const sessions = mockSessions.filter(s => 
+        s.status === "open" && s.enrolledStudents.includes(student.id)
+      );
+
+      const allTutors = mockTutors;
+
+      setStudentSessions(sessions);
+      setTutors(allTutors);
+
+    } catch (err) {
+      console.error("Failed to fetch data:", err);
+    }
+  };
+
+  useEffect(() => {
+    handleFetchData();
+  }, []);
   const selectedSession = studentSessions.find(s => s.id === selectedSessionId);
 
   // Calendar functions
@@ -81,21 +98,74 @@ export function EnhancedMySessionsTab({ student }: EnhancedMySessionsTabProps) {
     }
   };
 
-  const handleSubmitRescheduleRequest = () => {
-    if (!rescheduleData.newDate || !rescheduleData.newStartTime || !rescheduleData.newEndTime || !rescheduleData.reason) {
-      toast.error('Please fill in all fields');
+  const handleSubmitRescheduleRequest = async () => {
+    if (
+      !rescheduleData.newDate ||
+      !rescheduleData.newStartTime ||
+      !rescheduleData.newEndTime ||
+      !rescheduleData.reason
+    ) {
+      toast.error("Please fill in all fields");
       return;
     }
-    toast.success('Reschedule request sent to tutor. You will be notified via Messages when the tutor responds.');
-    setRescheduleDialogOpen(false);
-    setSelectedSessionId(null);
+  
+    if (!selectedSession) {
+      toast.error("No session selected");
+      return;
+    }
+  
+    try {
+      const payload = {
+        sessionId: selectedSession.id,
+        requesterId: student.id,
+        requesterRole: 'student',
+        newDate: rescheduleData.newDate,
+        newStartTime: rescheduleData.newStartTime,
+        newEndTime: rescheduleData.newEndTime,
+        reason: rescheduleData.reason
+      };
+  
+      const res = await fetch(`/api/sessions/${selectedSession.id}/reschedule-request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+  
+      if (!res.ok) throw new Error("Failed to send request");
+  
+      toast.success("Reschedule request sent to the tutor.");
+      
+      // Reset UI
+      setRescheduleDialogOpen(false);
+      setSelectedSessionId(null);
+  
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to send reschedule request. Please try again.");
+    }
   };
-
-  const handleCancelSession = () => {
-    toast.success('Session cancelled successfully');
-    setSelectedSessionId(null);
+  
+  const handleCancelSession = async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}/leave`, {
+        method: "POST",
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        alert(`Rời session thất bại: ${data.message}`);
+        return;
+      }
+  
+      alert("Bạn đã rời session thành công!");
+    } catch (error) {
+      console.error(error);
+      alert("Có lỗi xảy ra khi rời session.");
+    }
   };
-
+  
+  
   return (
     <div className="space-y-6">
       {/* Calendar View */}

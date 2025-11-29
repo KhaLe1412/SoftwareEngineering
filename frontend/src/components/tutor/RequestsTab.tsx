@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -13,47 +13,68 @@ interface RequestsTabProps {
 }
 
 export function RequestsTab({ tutor }: RequestsTabProps) {
-  // Use mock reschedule requests from mock-data
-  const [rescheduleRequests, setRescheduleRequests] = useState(
-    mockRescheduleRequests.filter(req => {
-      const session = mockSessions.find(s => s.id === req.sessionId);
-      return session?.tutorId === tutor.id;
-    })
-  );
+  const [sessions, setSessions] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [rescheduleRequests, setRescheduleRequests] = useState([]);
 
-  const handleApproveReschedule = (requestId: string) => {
-    const request = rescheduleRequests.find(r => r.id === requestId);
-    if (!request) return;
+  const handleFetchData = () => {
+    const tutorSessions = mockSessions.filter(s => s.tutorId === tutor.id);
 
-    const session = mockSessions.find(s => s.id === request.sessionId);
-    
-    setRescheduleRequests(prev =>
-      prev.map(req =>
-        req.id === requestId ? { ...req, status: 'approved' as const } : req
-      )
+    const allStudents = mockStudents;
+
+    const relatedRequests = mockRescheduleRequests.filter(req =>
+      tutorSessions.some(s => s.id === req.sessionId)
     );
 
-    // Send notification to all enrolled students if it's an open session
-    if (session && session.status === 'open' && session.enrolledStudents) {
-      const enrolledCount = session.enrolledStudents.length;
-      toast.success(`Reschedule approved! Notification sent to ${enrolledCount} enrolled student(s) via Messages.`);
-    } else if (session && session.enrolledStudents) {
-      const student = mockStudents.find(s => session.enrolledStudents.includes(s.id));
-      toast.success(`Reschedule approved! Notification sent to ${student?.name} via Messages.`);
-    } else {
-      toast.success('Reschedule request approved');
+    setSessions(tutorSessions);
+    setStudents(allStudents);
+    setRescheduleRequests(relatedRequests);
+  };
+
+  useEffect(() => {
+    handleFetchData();
+  }, []);
+
+  const handleApproveReschedule = async (requestId: string) => {
+    try {
+      const res = await fetch(`/api/requests/reschedule/${requestId}/approve`, {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error('Failed to approve request');
+  
+      setRescheduleRequests(prev =>
+        prev.map(req =>
+          req.id === requestId ? { ...req, status: 'approved' } : req
+        )
+      );
+  
+      toast.success('Reschedule approved!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to approve reschedule');
     }
   };
-
-  const handleRejectReschedule = (requestId: string) => {
-    setRescheduleRequests(prev =>
-      prev.map(req =>
-        req.id === requestId ? { ...req, status: 'rejected' as const } : req
-      )
-    );
-    toast.error('Reschedule request rejected');
+  
+  const handleRejectReschedule = async (requestId: string) => {
+    try {
+      const res = await fetch(`/api/requests/reschedule/${requestId}/reject`, {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error('Failed to reject request');
+  
+      setRescheduleRequests(prev =>
+        prev.map(req =>
+          req.id === requestId ? { ...req, status: 'rejected' } : req
+        )
+      );
+  
+      toast.error('Reschedule request rejected');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to reject reschedule');
+    }
   };
-
+  
   return (
     <div className="space-y-4">
       <Card>

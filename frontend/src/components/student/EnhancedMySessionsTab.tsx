@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -7,10 +7,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
-import { Calendar, Clock, MapPin, Video, X, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
-import { mockSessions, mockTutors } from '../../lib/mock-data';
-import { Student, Session } from '../../types';
+import { Calendar, Clock, MapPin, Video, X, Edit, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Student, Session, Tutor } from '../../types';
 import { toast } from 'sonner';
+
+const API_BASE_URL = 'http://localhost:5001/api';
 
 interface EnhancedMySessionsTabProps {
   student: Student;
@@ -20,6 +21,9 @@ export function EnhancedMySessionsTab({ student }: EnhancedMySessionsTabProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [studentSessions, setStudentSessions] = useState<Session[]>([]);
+  const [tutors, setTutors] = useState<Tutor[]>([]);
   
   const [rescheduleData, setRescheduleData] = useState({
     newDate: '',
@@ -28,10 +32,77 @@ export function EnhancedMySessionsTab({ student }: EnhancedMySessionsTabProps) {
     reason: ''
   });
 
-  // Get sessions for student (both individual and enrolled open sessions)
-  const studentSessions = mockSessions.filter(s => {
-    return (s.status === 'open' && s.enrolledStudents.includes(student.id));
-  });
+  // Fetch student's enrolled sessions from API
+  const fetchStudentSessions = async () => {
+    try {
+      setIsLoading(true);
+      // Fetch all open sessions where student is enrolled
+      const response = await fetch(
+        `${API_BASE_URL}/sessions?status=open`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      // Response format: [{session: Session, students: Student[], tutor: Tutor}]
+      
+      // Filter sessions where student is enrolled
+      const enrolledSessions = data
+        .map((item: any) => item.session)
+        .filter((session: Session) => 
+          session.status === 'open' && 
+          session.enrolledStudents?.includes(student.id)
+        );
+      
+      setStudentSessions(enrolledSessions);
+      
+      // Extract unique tutors from all sessions
+      const allTutors = new Map<string, Tutor>();
+      data.forEach((item: any) => {
+        if (item.tutor && !allTutors.has(item.tutor.id)) {
+          allTutors.set(item.tutor.id, item.tutor);
+        }
+      });
+      
+      setTutors(Array.from(allTutors.values()));
+    } catch (error) {
+      console.error('Error fetching student sessions:', error);
+      toast.error('Failed to load your sessions');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch on component mount and when student changes
+  useEffect(() => {
+    fetchStudentSessions();
+    
+    // Listen for custom event to refresh when join/leave happens
+    const handleRefresh = () => {
+      fetchStudentSessions();
+    };
+    
+    window.addEventListener('sessionEnrollmentChanged', handleRefresh);
+    
+    // Also refresh when window gains focus (user switches tabs)
+    const handleFocus = () => {
+      fetchStudentSessions();
+    };
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('sessionEnrollmentChanged', handleRefresh);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [student.id]);
 
   const selectedSession = studentSessions.find(s => s.id === selectedSessionId);
 
@@ -91,9 +162,52 @@ export function EnhancedMySessionsTab({ student }: EnhancedMySessionsTabProps) {
     setSelectedSessionId(null);
   };
 
-  const handleCancelSession = () => {
-    toast.success('Session cancelled successfully');
-    setSelectedSessionId(null);
+  const handleCancelSession = async () => {
+    if (!selectedSession) return;
+
+    const sessionId = selectedSession.id;
+    const sessionTitle = selectedSession.subject;
+
+    // Optimistic update: remove session from state immediately
+    setStudentSessions(prevSessions => 
+      prevSessions.filter(session => session.id !== sessionId)
+    );
+
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}/leave`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentId: student.id
+        })
+      });
+
+      if (!response.ok) {
+        // Rollback on error
+        await fetchStudentSessions();
+        const errorData = await response.json().catch(() => ({ message: 'Failed to cancel session' }));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Refresh sessions list to get latest data from server
+      await fetchStudentSessions();
+      
+      // Dispatch event to notify JoinTab to refresh
+      window.dispatchEvent(new Event('sessionEnrollmentChanged'));
+      
+      toast.success(`Session cancelled successfully: ${sessionTitle}`);
+      setSelectedSessionId(null);
+    } catch (error: any) {
+      console.error('Error cancelling session:', error);
+      toast.error(error.message || 'Failed to cancel session');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -123,8 +237,13 @@ export function EnhancedMySessionsTab({ student }: EnhancedMySessionsTabProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-2">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+            </div>
+          ) : (
+            /* Calendar Grid */
+            <div className="grid grid-cols-7 gap-2">
             {/* Day headers */}
             {dayNames.map(day => (
               <div key={day} className="p-2 text-center text-sm border-b">
@@ -175,6 +294,7 @@ export function EnhancedMySessionsTab({ student }: EnhancedMySessionsTabProps) {
               );
             })}
           </div>
+          )}
         </CardContent>
       </Card>
 
@@ -196,12 +316,12 @@ export function EnhancedMySessionsTab({ student }: EnhancedMySessionsTabProps) {
                 <p className="text-sm text-gray-600">Tutor</p>
                 <div className="flex items-center gap-2 mt-1">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={mockTutors.find(t => t.id === selectedSession.tutorId)?.avatar} />
+                    <AvatarImage src={tutors.find(t => t.id === selectedSession.tutorId)?.avatar} />
                     <AvatarFallback>
-                      {mockTutors.find(t => t.id === selectedSession.tutorId)?.name.charAt(0)}
+                      {tutors.find(t => t.id === selectedSession.tutorId)?.name.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
-                  <span>{mockTutors.find(t => t.id === selectedSession.tutorId)?.name}</span>
+                  <span>{tutors.find(t => t.id === selectedSession.tutorId)?.name}</span>
                 </div>
               </div>
 

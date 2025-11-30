@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -8,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from '../ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Label } from '../ui/label';
-import { Calendar, Clock, MapPin, Video, Users, UserPlus, Search, Sparkles, X, LogOut } from 'lucide-react';
-import { mockSessions, mockTutors, mock } from '../../lib/mock-data';
-import { Student, Session } from '../../types';
-import { toast } from 'sonner@2.0.3';
+import { Calendar, Clock, MapPin, Video, Users, UserPlus, Search, Sparkles, X, LogOut, Loader2 } from 'lucide-react';
+import { Student, Session, Tutor } from '../../types';
+import { toast } from 'sonner';
+
+const API_BASE_URL = 'http://localhost:5001/api';
 
 interface JoinTabProps {
   student: Student;
@@ -25,9 +26,67 @@ export function JoinTab({ student }: JoinTabProps) {
   const [autoMatchDescription, setAutoMatchDescription] = useState('');
   const [matchedSession, setMatchedSession] = useState<Session | null>(null);
   const [isMatching, setIsMatching] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [openSessions, setOpenSessions] = useState<Session[]>([]);
+  const [tutors, setTutors] = useState<Tutor[]>([]);
 
-  // Get all open sessions
-  const openSessions = mockSessions.filter(s => s.status === 'open');
+  // Fetch open sessions from API
+  const fetchOpenSessions = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(
+        `${API_BASE_URL}/sessions?status=open`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      // Response format: [{session: Session, students: Student[], tutor: Tutor}]
+      
+      // Extract sessions
+      const sessions = data.map((item: any) => item.session);
+      setOpenSessions(sessions);
+      
+      // Extract unique tutors from all sessions
+      const allTutors = new Map<string, Tutor>();
+      data.forEach((item: any) => {
+        if (item.tutor && !allTutors.has(item.tutor.id)) {
+          allTutors.set(item.tutor.id, item.tutor);
+        }
+      });
+      
+      setTutors(Array.from(allTutors.values()));
+    } catch (error) {
+      console.error('Error fetching open sessions:', error);
+      toast.error('Failed to load open sessions');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch on component mount
+  useEffect(() => {
+    fetchOpenSessions();
+    
+    // Listen for custom event to refresh when enrollment changes (from MySessionsTab cancel)
+    const handleRefresh = () => {
+      fetchOpenSessions();
+    };
+    
+    window.addEventListener('sessionEnrollmentChanged', handleRefresh);
+    
+    return () => {
+      window.removeEventListener('sessionEnrollmentChanged', handleRefresh);
+    };
+  }, []);
   
   // Get unique subjects
   const uniqueSubjects = Array.from(new Set(openSessions.map(s => s.subject)));
@@ -43,7 +102,7 @@ export function JoinTab({ student }: JoinTabProps) {
   // Filter sessions based on search and filters
   const filterSessions = (sessions: Session[]) => {
     return sessions.filter(session => {
-      const tutor = mockTutors.find(t => t.id === session.tutorId);
+      const tutor = tutors.find(t => t.id === session.tutorId);
       const matchesSearch = 
         session.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tutor?.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -57,12 +116,162 @@ export function JoinTab({ student }: JoinTabProps) {
   const filteredEnrolledSessions = filterSessions(enrolledSessions);
   const filteredAvailableSessions = filterSessions(availableSessions);
 
-  const handleJoinSession = (sessionId: string, sessionTitle: string) => {
-    toast.success(`Successfully joined session: ${sessionTitle}`);
+  // Helper function to check if two time ranges overlap
+  const checkTimeOverlap = (date1: string, start1: string, end1: string, date2: string, start2: string, end2: string): boolean => {
+    // If different dates, no overlap
+    if (date1 !== date2) return false;
+    
+    // Convert time to minutes for easier comparison
+    const timeToMinutes = (time: string): number => {
+      const [h, m] = time.split(':').map(Number);
+      return h * 60 + m;
+    };
+    
+    const start1Min = timeToMinutes(start1);
+    const end1Min = timeToMinutes(end1);
+    const start2Min = timeToMinutes(start2);
+    const end2Min = timeToMinutes(end2);
+    
+    // Check if time ranges overlap
+    // Overlap occurs if: start1 < end2 && start2 < end1
+    return start1Min < end2Min && start2Min < end1Min;
   };
 
-  const handleLeaveSession = (sessionId: string, sessionTitle: string) => {
-    toast.success(`Left session: ${sessionTitle}`);
+  // Check if session overlaps with any enrolled sessions
+  const checkSessionOverlap = (newSession: Session): Session | null => {
+    for (const enrolledSession of enrolledSessions) {
+      if (checkTimeOverlap(
+        newSession.date,
+        newSession.startTime,
+        newSession.endTime,
+        enrolledSession.date,
+        enrolledSession.startTime,
+        enrolledSession.endTime
+      )) {
+        return enrolledSession;
+      }
+    }
+    return null;
+  };
+
+  const handleJoinSession = async (sessionId: string, sessionTitle: string) => {
+    const sessionToJoin = openSessions.find(s => s.id === sessionId);
+    if (!sessionToJoin) {
+      toast.error('Session not found');
+      return;
+    }
+
+    // Check for time overlap with enrolled sessions
+    const conflictingSession = checkSessionOverlap(sessionToJoin);
+    if (conflictingSession) {
+      toast.error(
+        `Cannot join this session! You already have a session "${conflictingSession.subject}" scheduled at the same time (${conflictingSession.date} ${conflictingSession.startTime}-${conflictingSession.endTime}). Please leave that session first or choose a different time.`,
+        { duration: 6000 }
+      );
+      return;
+    }
+
+    // Optimistic update: update state immediately
+    setOpenSessions(prevSessions => 
+      prevSessions.map(session => {
+        if (session.id === sessionId) {
+          return {
+            ...session,
+            enrolledStudents: [...(session.enrolledStudents || []), student.id],
+            status: (session.enrolledStudents?.length || 0) + 1 >= session.maxStudents ? 'full' : session.status
+          };
+        }
+        return session;
+      })
+    );
+
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentId: student.id
+        })
+      });
+
+      if (!response.ok) {
+        // Rollback on error
+        await fetchOpenSessions();
+        const errorData = await response.json().catch(() => ({ message: 'Failed to join session' }));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Refresh sessions list to get latest data from server
+      await fetchOpenSessions();
+      
+      // Dispatch event to notify MySessionsTab to refresh
+      window.dispatchEvent(new Event('sessionEnrollmentChanged'));
+      
+      toast.success(`Successfully joined session: ${sessionTitle}`);
+    } catch (error: any) {
+      console.error('Error joining session:', error);
+      toast.error(error.message || 'Failed to join session');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLeaveSession = async (sessionId: string, sessionTitle: string) => {
+    // Optimistic update: update state immediately
+    // Remove student from enrolledStudents array
+    setOpenSessions(prevSessions => 
+      prevSessions.map(session => {
+        if (session.id === sessionId) {
+          const newEnrolledStudents = (session.enrolledStudents || []).filter(id => id !== student.id);
+          return {
+            ...session,
+            enrolledStudents: newEnrolledStudents,
+            status: session.status === 'full' && newEnrolledStudents.length < session.maxStudents ? 'open' : session.status
+          };
+        }
+        return session;
+      })
+    );
+
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}/leave`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentId: student.id
+        })
+      });
+
+      if (!response.ok) {
+        // Rollback on error - refresh from server
+        await fetchOpenSessions();
+        const errorData = await response.json().catch(() => ({ message: 'Failed to leave session' }));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Refresh sessions list to get latest data from server (this ensures state is in sync)
+      await fetchOpenSessions();
+      
+      // Dispatch event to notify MySessionsTab to refresh
+      window.dispatchEvent(new Event('sessionEnrollmentChanged'));
+      
+      toast.success(`Left session: ${sessionTitle}`);
+    } catch (error: any) {
+      console.error('Error leaving session:', error);
+      toast.error(error.message || 'Failed to leave session');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAutoMatch = () => {
@@ -116,7 +325,7 @@ export function JoinTab({ student }: JoinTabProps) {
   };
 
   const renderSessionCard = (session: Session, isEnrolled: boolean = false) => {
-    const tutor = mockTutors.find(t => t.id === session.tutorId);
+    const tutor = tutors.find(t => t.id === session.tutorId);
     const spotsLeft = (session.maxStudents || 0) - (session.enrolledStudents?.length || 0);
     
     return (
@@ -183,17 +392,37 @@ export function JoinTab({ student }: JoinTabProps) {
                 variant="outline"
                 className="w-full border-red-300 text-red-600 hover:bg-red-50"
                 onClick={() => handleLeaveSession(session.id, session.subject)}
+                disabled={isLoading}
               >
-                <LogOut className="h-4 w-4 mr-2" />
-                Leave Session
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Leaving...
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Leave Session
+                  </>
+                )}
               </Button>
             ) : spotsLeft > 0 ? (
               <Button 
                 className="w-full"
                 onClick={() => handleJoinSession(session.id, session.subject)}
+                disabled={isLoading}
               >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Join Session ({spotsLeft} spots left)
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Joining...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Join Session ({spotsLeft} spots left)
+                  </>
+                )}
               </Button>
             ) : (
               <Badge variant="destructive" className="w-full justify-center py-2">

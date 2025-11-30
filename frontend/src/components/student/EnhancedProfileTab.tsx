@@ -662,6 +662,20 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
       });
       
       setTutors(Array.from(allTutors.values()));
+      
+      // Update sessionReviews from server data
+      const reviewsFromServer: Record<string, SessionReview> = {};
+      sessions.forEach((session: Session) => {
+        const review = session.reviews?.find(r => r.studentId === student.id);
+        if (review) {
+          reviewsFromServer[session.id] = {
+            sessionId: session.id,
+            rating: review.rating,
+            comment: review.comment
+          };
+        }
+      });
+      setSessionReviews(reviewsFromServer);
     } catch (error) {
       console.error('Error fetching overview data:', error);
       toast.error('Failed to load session history');
@@ -782,11 +796,29 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
     }
 
     try {
-      // Vì không có database, chỉ update local state và mock data
-      // Trong tương lai có thể gọi API: POST /api/sessions/:id/review
-      // const response = await fetch(`${API_BASE_URL}/sessions/${currentReviewSessionId}/review`, {...});
+      setIsLoading(true);
       
-      // Update local state
+      // Gọi API để lưu review vào backend
+      const response = await fetch(`${API_BASE_URL}/sessions/${currentReviewSessionId}/review`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({
+          studentId: student.id,
+          rating: reviewData.rating,
+          comment: reviewData.comment
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to save review' }));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Update local state với data từ server
       setSessionReviews(prev => ({
         ...prev,
         [currentReviewSessionId]: {
@@ -796,27 +828,18 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
         }
       }));
 
-      // Update session review via API (backend will update mock data)
-      // In the future, can call: POST /api/sessions/:id/review
-      // const response = await fetch(`${API_BASE_URL}/sessions/${currentReviewSessionId}/review`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     studentId: student.id,
-      //     rating: reviewData.rating,
-      //     comment: reviewData.comment
-      //   })
-      // });
-
-      // Refresh sessions from API
+      // Refresh sessions from API để lấy data mới nhất
       await handleOverview();
 
       toast.success('Session review saved successfully!');
       setReviewDialogOpen(false);
       setCurrentReviewSessionId(null);
-    } catch (error) {
+      setReviewData({ rating: 5, comment: '' });
+    } catch (error: any) {
       console.error('Error saving review:', error);
-      toast.error('Failed to save review');
+      toast.error(error.message || 'Failed to save review');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -1183,10 +1206,13 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReviewDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setReviewDialogOpen(false)} disabled={isLoading}>
               Cancel
             </Button>
-            <Button onClick={handleSaveReview}>Save Review</Button>
+            <Button onClick={handleSaveReview} disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Review
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -10,17 +10,46 @@ import { Message } from "../types/type.js";
 export const joinSession = (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { userId } = req.body;
+    const { userId, studentId } = req.body;
 
-    if (!userId) return res.status(400).json({ message: "Missing userId" });
+    // Accept both userId and studentId for compatibility
+    const studentIdToUse = studentId || userId;
+    if (!studentIdToUse) return res.status(400).json({ message: "Missing studentId or userId" });
 
     const session = mockSessions.find((s) => s.id === id);
     if (!session) return res.status(404).json({ message: "Session not found" });
 
-    session.status = "scheduled";
+    // Check if session is open
+    if (session.status !== "open") {
+      return res.status(400).json({ message: "Session is not open for enrollment" });
+    }
+
+    // Initialize enrolledStudents if not exists
+    if (!session.enrolledStudents) {
+      session.enrolledStudents = [];
+    }
+
+    // Check if student already enrolled
+    if (session.enrolledStudents.includes(studentIdToUse)) {
+      return res.status(400).json({ message: "Student already enrolled in this session" });
+    }
+
+    // Check if session is full
+    const currentEnrolled = session.enrolledStudents.length;
+    if (currentEnrolled >= session.maxStudents) {
+      return res.status(400).json({ message: "Session is full" });
+    }
+
+    // Add student to enrolledStudents
+    session.enrolledStudents.push(studentIdToUse);
+
+    // Update status to "full" if no slots left
+    if (session.enrolledStudents.length >= session.maxStudents) {
+      session.status = "full";
+    }
 
     return res.status(200).json({
-      message: "User joined the session",
+      message: "Student joined the session successfully",
       session,
     });
   } catch (error) {
@@ -35,14 +64,36 @@ export const joinSession = (req: Request, res: Response) => {
 export const leaveSession = (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const { userId, studentId } = req.body;
+
+    // Accept both userId and studentId for compatibility
+    const studentIdToUse = studentId || userId;
+    if (!studentIdToUse) return res.status(400).json({ message: "Missing studentId or userId" });
 
     const session = mockSessions.find((s) => s.id === id);
     if (!session) return res.status(404).json({ message: "Session not found" });
 
-    session.status = "completed";
+    // Initialize enrolledStudents if not exists
+    if (!session.enrolledStudents) {
+      session.enrolledStudents = [];
+    }
+
+    // Check if student is enrolled
+    const studentIndex = session.enrolledStudents.indexOf(studentIdToUse);
+    if (studentIndex === -1) {
+      return res.status(400).json({ message: "Student is not enrolled in this session" });
+    }
+
+    // Remove student from enrolledStudents
+    session.enrolledStudents.splice(studentIndex, 1);
+
+    // Update status back to "open" if it was "full" and now has slots
+    if (session.status === "full" && session.enrolledStudents.length < session.maxStudents) {
+      session.status = "open";
+    }
 
     return res.status(200).json({
-      message: "User left the session",
+      message: "Student left the session successfully",
       session,
     });
   } catch (error) {

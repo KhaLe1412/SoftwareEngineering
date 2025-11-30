@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
 import { Button } from './components/ui/button';
 import { Badge } from './components/ui/badge';
-import { UserRole } from './types';
+import { UserRole, Student, Tutor, Admin } from './types';
 import { mockStudents, mockTutors, mockAdmins } from './lib/mock-data';
 import { StudentDashboard } from './components/StudentDashboard';
 import { TutorDashboard } from './components/TutorDashboard';
@@ -14,10 +14,18 @@ import { Toaster } from './components/ui/sonner';
 import { Users, GraduationCap, BarChart, Award, Shield } from 'lucide-react';
 import schoolLogo from 'figma:asset/5d30621cfc38347904bd973d0c562d26588d6b2f.png';
 
+const API_BASE_URL = 'http://localhost:5001/api';
+
 export default function App() {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  // State để lưu data từ API
+  const [currentStudent, setCurrentStudent] = useState<Student | null>(null);
+  const [currentTutor, setCurrentTutor] = useState<Tutor | null>(null);
+  const [currentAdmin, setCurrentAdmin] = useState<Admin | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = (role: UserRole, userId: string) => {
     setSelectedRole(role);
@@ -42,7 +50,77 @@ export default function App() {
     setSelectedRole(null);
     setSelectedUserId(null);
     setIsLoggedIn(false);
+    setCurrentStudent(null);
+    setCurrentTutor(null);
+    setCurrentAdmin(null);
   };
+
+  // Function để fetch user data từ API
+  const fetchUserData = async () => {
+    if (!selectedUserId || !selectedRole) return;
+
+    setIsLoading(true);
+    try {
+      if (selectedRole === 'student') {
+        const response = await fetch(`${API_BASE_URL}/students/${selectedUserId}?userId=${selectedUserId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        if (response.ok) {
+          const student = await response.json();
+          setCurrentStudent(student);
+        }
+      } else if (selectedRole === 'tutor') {
+        const response = await fetch(`${API_BASE_URL}/tutors/${selectedUserId}?userId=${selectedUserId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        if (response.ok) {
+          const tutor = await response.json();
+          setCurrentTutor(tutor);
+        }
+      } else if (selectedRole === 'admin') {
+        // Admin vẫn dùng mock data vì chưa có API endpoint
+        const admin = mockAdmins.find(a => a.id === selectedUserId);
+        if (admin) {
+          setCurrentAdmin(admin);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      // Fallback to mock data nếu API fail
+      if (selectedRole === 'student') {
+        const student = mockStudents.find(s => s.id === selectedUserId);
+        if (student) setCurrentStudent(student);
+      } else if (selectedRole === 'tutor') {
+        const tutor = mockTutors.find(t => t.id === selectedUserId);
+        if (tutor) setCurrentTutor(tutor);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch user data từ API khi selectedUserId thay đổi
+  useEffect(() => {
+    fetchUserData();
+  }, [selectedUserId, selectedRole]);
+
+  // Listen for profile update events để refresh data
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      fetchUserData();
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
+  }, [selectedUserId, selectedRole]);
 
   // Show login page first if not logged in
   if (!isLoggedIn) {
@@ -56,11 +134,24 @@ export default function App() {
 
   // Render based on selected role
   if (selectedRole === 'student' && selectedUserId) {
-    const student = mockStudents.find(s => s.id === selectedUserId);
-    if (student) {
+    if (isLoading) {
       return (
         <>
-          <StudentDashboard student={student} />
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p>Loading...</p>
+            </div>
+          </div>
+          <Toaster />
+        </>
+      );
+    }
+    
+    if (currentStudent) {
+      return (
+        <>
+          <StudentDashboard student={currentStudent} />
           <div className="fixed bottom-4 right-4">
             <Button onClick={handleLogout} variant="outline">
               Đăng xuất
@@ -73,11 +164,24 @@ export default function App() {
   }
 
   if (selectedRole === 'tutor' && selectedUserId) {
-    const tutor = mockTutors.find(t => t.id === selectedUserId);
-    if (tutor) {
+    if (isLoading) {
       return (
         <>
-          <TutorDashboard tutor={tutor} />
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+              <p>Loading...</p>
+            </div>
+          </div>
+          <Toaster />
+        </>
+      );
+    }
+    
+    if (currentTutor) {
+      return (
+        <>
+          <TutorDashboard tutor={currentTutor} />
           <div className="fixed bottom-4 right-4">
             <Button onClick={handleLogout} variant="outline">
               Đăng xuất
@@ -118,11 +222,24 @@ export default function App() {
   }
 
   if (selectedRole === 'admin' && selectedUserId) {
-    const admin = mockAdmins.find(a => a.id === selectedUserId);
-    if (admin) {
+    if (isLoading) {
       return (
         <>
-          <AdminDashboard admin={admin} />
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+              <p>Loading...</p>
+            </div>
+          </div>
+          <Toaster />
+        </>
+      );
+    }
+    
+    if (currentAdmin) {
+      return (
+        <>
+          <AdminDashboard admin={currentAdmin} />
           <div className="fixed bottom-4 right-4">
             <Button onClick={handleLogout} variant="outline">
               Đăng xuất

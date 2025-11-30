@@ -144,6 +144,34 @@ export function EnhancedTutorProfileTab({ tutor }: EnhancedTutorProfileTabProps)
 
   const handleSaveProfile = async () => {
     try {
+      // Gọi API để update tutor profile
+      const response = await fetch(`${API_BASE_URL}/tutors/${tutor.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: tutor.id, // Required by middleware
+          name: name,
+          email: email,
+          expertise: expertise,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const updatedTutor = await response.json();
+      
+      // Update local state với data từ server
+      setName(updatedTutor.name);
+      setEmail(updatedTutor.email);
+      setExpertise(updatedTutor.expertise);
+      
+      // Trigger event để App.tsx refresh data
+      window.dispatchEvent(new Event('profileUpdated'));
+      
       toast.success('Profile updated successfully!');
       setIsEditing(false);
     } catch (error) {

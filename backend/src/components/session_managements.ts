@@ -205,6 +205,7 @@ export const updateSessionById = (req: Request, res: Response) => {
       "meetingLink",
       "notes",
       "maxStudents",
+      "enrolledStudents"
     ]);
 
     // Filter updateData to only allowed keys (protects against extra/malicious fields)

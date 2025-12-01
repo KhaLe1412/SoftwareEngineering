@@ -32,21 +32,29 @@ export function EnhancedMySessionsTab({ student}: EnhancedMySessionsTabProps) {
   const [studentSessions, setStudentSessions] = useState<Session[]>([]);
   const [tutors, setTutors] = useState([]);
 
-  const handleFetchData = () => {
+  const handleFetchData = async () => {
     try {
-      const sessions = mockSessions.filter(s => 
-        s.status === "open" && s.enrolledStudents.includes(student.id)
-      );
+      // 1️⃣ Fetch sessions của sinh viên
+      const sessionRes = await fetch(`/api/sessions?studentId=${student.id}`);
+      const sessionData = await sessionRes.json();
 
-      const allTutors = mockTutors;
+      // 2️⃣ Fetch tất cả tutor
+      const tutorRes = await fetch(`/api/tutors`);
+      const tutorData = await tutorRes.json();
 
-      setStudentSessions(sessions);
-      setTutors(allTutors);
+      if (!sessionRes.ok || !tutorRes.ok) {
+        throw new Error("Failed to fetch data");
+      }
+
+      setStudentSessions(sessionData);  
+      setTutors(tutorData);
 
     } catch (err) {
       console.error("Failed to fetch data:", err);
+      toast.error("Cannot load session data, please try again.");
     }
   };
+
 
   useEffect(() => {
     handleFetchData();

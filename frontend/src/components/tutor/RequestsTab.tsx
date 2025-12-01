@@ -17,18 +17,28 @@ export function RequestsTab({ tutor }: RequestsTabProps) {
   const [students, setStudents] = useState([]);
   const [rescheduleRequests, setRescheduleRequests] = useState([]);
 
-  const handleFetchData = () => {
-    const tutorSessions = mockSessions.filter(s => s.tutorId === tutor.id);
+  const handleFetchData = async () => {
+    try {
+      // 1. Lấy session mà tutor dạy
+      const sessionRes = await fetch(`/api/sessions?tutorId=${tutor.id}`);
+      const tutorSessions = await sessionRes.json();
 
-    const allStudents = mockStudents;
+      // 2. Lấy toàn bộ student
+      const studentRes = await fetch(`/api/students`);
+      const allStudents = await studentRes.json();
 
-    const relatedRequests = mockRescheduleRequests.filter(req =>
-      tutorSessions.some(s => s.id === req.sessionId)
-    );
+      // 3. Lấy request liên quan tutor
+      const reqRes = await fetch(`/api/requests/reschedule?userId=${tutor.id}`);
+      const relatedRequests = await reqRes.json();
 
-    setSessions(tutorSessions);
-    setStudents(allStudents);
-    setRescheduleRequests(relatedRequests);
+      setSessions(tutorSessions);
+      setStudents(allStudents);
+      setRescheduleRequests(relatedRequests);
+
+    } catch (err) {
+      console.error("Failed to fetch data", err);
+      toast.error("Failed to load requests");
+    }
   };
 
   useEffect(() => {
@@ -42,13 +52,8 @@ export function RequestsTab({ tutor }: RequestsTabProps) {
       });
       if (!res.ok) throw new Error('Failed to approve request');
   
-      setRescheduleRequests(prev =>
-        prev.map(req =>
-          req.id === requestId ? { ...req, status: 'approved' } : req
-        )
-      );
-  
       toast.success('Reschedule approved!');
+      handleFetchData();
     } catch (error) {
       console.error(error);
       toast.error('Failed to approve reschedule');
@@ -61,14 +66,10 @@ export function RequestsTab({ tutor }: RequestsTabProps) {
         method: 'POST',
       });
       if (!res.ok) throw new Error('Failed to reject request');
+
   
-      setRescheduleRequests(prev =>
-        prev.map(req =>
-          req.id === requestId ? { ...req, status: 'rejected' } : req
-        )
-      );
-  
-      toast.error('Reschedule request rejected');
+      toast.info('Reschedule request rejected');
+      handleFetchData();
     } catch (error) {
       console.error(error);
       toast.error('Failed to reject reschedule');

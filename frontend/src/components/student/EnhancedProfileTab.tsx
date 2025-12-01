@@ -683,17 +683,43 @@ export function EnhancedProfileTab({ student }: EnhancedProfileTabProps) {
 
   const handleSaveProfile = async () => {
     try {
-      // Vì không có database, chỉ update local state
-      // Trong tương lai có thể gọi API: PATCH /api/students/:id
-      // const response = await fetch(`${API_BASE_URL}/students/${student.id}`, {...});
+      setIsLoading(true);
       
-      // Update local state
-      // Note: Trong thực tế, data sẽ được lưu vào database qua API
+      // Gọi API để update student profile
+      const response = await fetch(`${API_BASE_URL}/students/${student.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: student.id, // Required by middleware
+          name: name,
+          email: email,
+          supportNeeds: supportNeeds,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const updatedStudent = await response.json();
+      
+      // Update local state với data từ server
+      setName(updatedStudent.name);
+      setEmail(updatedStudent.email);
+      setSupportNeeds(updatedStudent.supportNeeds);
+      
+      // Trigger event để App.tsx refresh data
+      window.dispatchEvent(new Event('profileUpdated'));
+      
       toast.success('Profile updated successfully!');
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('Failed to update profile');
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -5,7 +5,7 @@ import {
 	createEvaluation,
 	updateEvaluation,
 	deleteEvaluation,
-} from '../components/evaluation_managements.js';
+} from '../controllers/evaluationController.js';
 
 const router = express.Router();
 

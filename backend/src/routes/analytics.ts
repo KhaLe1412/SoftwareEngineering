@@ -1,5 +1,5 @@
 import express from 'express';
-import { getKPIs, getMonthlyTrends, getCoursePerformance } from '../components/reportings&analytics.js';
+import { getKPIs, getMonthlyTrends, getCoursePerformance } from '../controllers/analyticController.js';
 
 const router = express.Router();
 // GET /api/analytics/kpis
